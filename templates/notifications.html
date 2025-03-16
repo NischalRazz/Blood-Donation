@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-danger mb-0">Notifications</h1>
+        {% if unread_notifications %}
+            <button class="btn btn-outline-danger" id="markAllRead">
+                <i class="fas fa-check-double me-1"></i> Mark All as Read
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if notifications.items %}
+                <div class="notification-list">
+                    {% for notification in notifications.items %}
+                        <div class="notification-item p-3 {% if not notification.is_read %}unread{% endif %}" 
+                             data-notification-id="{{ notification.id }}">
+                            <div class="d-flex">
+                                <div class="notification-icon bg-{{ notification.type }} text-white me-3">
+                                    {% if notification.type == 'success' %}
+                                        <i class="fas fa-check"></i>
+                                    {% elif notification.type == 'warning' %}
+                                        <i class="fas fa-exclamation"></i>
+                                    {% elif notification.type == 'danger' %}
+                                        <i class="fas fa-times"></i>
+                                    {% else %}
+                                        <i class="fas fa-info"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="notification-content flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h6 class="mb-1">{{ notification.title }}</h6>
+                                        <small class="text-muted">{{ notification.created_at|timeago }}</small>
+                                    </div>
+                                    <p class="mb-2">{{ notification.message }}</p>
+                                    {% if notification.link %}
+                                        <a href="{{ notification.link }}" class="btn btn-sm btn-outline-{{ notification.type }}">
+                                            View Details
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if notifications.pages > 1 %}
+                    <nav class="p-3 border-top">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {{ 'disabled' if notifications.page == 1 }}">
+                                <a class="page-link" href="{{ url_for('notifications', page=notifications.prev_num) }}">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            
+                            {% for page_num in notifications.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    <li class="page-item {{ 'active' if page_num == notifications.page else '' }}">
+                                        <a class="page-link" href="{{ url_for('notifications', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#">...</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <li class="page-item {{ 'disabled' if notifications.page == notifications.pages }}">
+                                <a class="page-link" href="{{ url_for('notifications', page=notifications.next_num) }}">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Notifications</h5>
+                    <p class="text-muted mb-0">You'll see notifications here when there's activity related to your account.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle mark all read button
+    const markAllReadBtn = document.getElementById('markAllRead');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function() {
+            fetch('{{ url_for("mark_all_read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove unread styling from all notifications
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                    });
+                    // Hide the mark all read button
+                    markAllReadBtn.style.display = 'none';
+                    // Update the notification counter in navbar
+                    const navCounter = document.querySelector('#notificationDropdown .badge');
+                    if (navCounter) {
+                        navCounter.remove();
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+
+    // Handle clicking on notifications
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationId = this.dataset.notificationId;
+            if (this.classList.contains('unread')) {
+                fetch(`{{ url_for("mark_notification_read", notification_id=0) }}`.replace('0', notificationId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.classList.remove('unread');
+                        // Update unread count in navbar
+                        const navCounter = document.querySelector('#notificationDropdown .badge');
+                        if (navCounter) {
+                            const currentCount = parseInt(navCounter.textContent);
+                            if (currentCount > 1) {
+                                navCounter.textContent = currentCount - 1;
+                            } else {
+                                navCounter.remove();
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

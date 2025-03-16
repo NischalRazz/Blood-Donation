@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodBridge - Blood Donation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <!-- Top bar with emergency contact -->
+    <div class="top-bar bg-light py-1">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <small><i class="fas fa-phone-alt text-danger me-1"></i> Emergency: <strong>1-800-BLOOD-HELP</strong></small>
+            </div>
+            <div>
+                <small><a href="{{ url_for('help_support') }}" class="text-decoration-none"><i class="fas fa-question-circle me-1"></i> Help</a></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <svg class="blood-drop me-2" width="30" height="30" viewBox="0 0 40 40">
+                    <path d="M20 2 C20 2 30 20 30 30 C30 35.5 25.5 40 20 40 C14.5 40 10 35.5 10 30 C10 20 20 2 20 2" fill="#dc3545"/>
+                </svg>
+                <span class="brand-text">BloodBridge</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for(current_user.role + '_dashboard') }}">Dashboard</a>
+                        </li>
+                        {% if current_user.role == 'donor' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('donate') }}">Donate Blood</a>
+                            </li>
+                        {% endif %}
+                        {% if current_user.role == 'receiver' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('request_blood') }}">Request Blood</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('blood_requests') }}">Blood Requests</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            Resources
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('donation_tips') }}">Donation Tips</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('eligibility_check') }}">Can I Give Blood?</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('blood_banks') }}">Blood Banks</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('faq') }}">FAQs</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('test_notifications') }}">Test Notifications</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="aboutDropdown" role="button" data-bs-toggle="dropdown">
+                            About
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('teams') }}">Our Team</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('contact') }}">Contact Us</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('help_support') }}">Help & Support</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i> {{ current_user.first_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">My Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a class="btn btn-outline-danger me-2" href="{{ url_for('login') }}">Login</a>
+                        <a class="btn btn-danger" href="{{ url_for('register') }}">Register</a>
+                    {% endif %}
+                    {% if current_user.is_authenticated %}
+                    <div class="nav-item dropdown me-3">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ unread_notifications|length }}
+                                </span>
+                            {% endif %}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Notifications</h6>
+                                {% if unread_notifications %}
+                                    <a href="{{ url_for('mark_all_read') }}" class="text-decoration-none small">Mark all read</a>
+                                {% endif %}
+                            </div>
+                            <div class="notification-list" style="max-height: 300px; overflow-y: auto;">
+                                {% if recent_notifications %}
+                                    {% for notification in recent_notifications %}
+                                        <a href="{{ notification.link or '#' }}" class="dropdown-item notification-item {% if not notification.is_read %}unread{% endif %}">
+                                            <!-- Rest of the notification item code -->
+                                        </a>
+                                    {% endfor %}
+                                    {% if recent_notifications|length >= 5 %}
+                                        <a href="{{ url_for('notifications') }}" class="dropdown-item text-center">
+                                            View all notifications
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="dropdown-item text-center text-muted py-3">
+                                        <i class="fas fa-bell-slash mb-2"></i>
+                                        <p class="mb-0">No notifications</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category else 'info' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+<!-- Chatbot Container -->
+<div id="chatbot-container" class="chatbot-container">
+    <div class="chatbot-window" id="chatbot-window" style="display: none;">
+        <div class="chatbot-header">
+            <div class="chatbot-title">
+                <i class="fas fa-robot me-2"></i>
+                BloodBridge AI Assistant
+            </div>
+            <button id="close-chatbot" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="message bot welcome-message">
+                <p>Welcome to BloodBridge AI Assistant! I'm here to help you with blood donation information.</p>
+                <div class="quick-suggestions">
+                    <button class="quick-suggestion">Donation Process</button>
+                    <button class="quick-suggestion">Eligibility</button>
+                    <button class="quick-suggestion">Benefits</button>
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input 
+                type="text" 
+                id="chatbot-input"
+                placeholder="Ask me about blood donation..."
+            />
+            <button id="send-message">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    <button id="toggle-chatbot" class="chatbot-toggle-btn">
+        <i class="fas fa-comment-medical"></i>
+        <span class="chatbot-badge" id="chatbot-new-message-badge" style="display: none;">1</span>
+    </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggle-chatbot');
+    const closeBtn = document.getElementById('close-chatbot');
+    const chatbotWindow = document.getElementById('chatbot-window');
+    const messagesContainer = document.getElementById('chatbot-messages');
+    const inputField = document.getElementById('chatbot-input');
+    const sendBtn = document.getElementById('send-message');
+    const newMessageBadge = document.getElementById('chatbot-new-message-badge');
+
+    // Expanded intents with comprehensive responses
+    const expandedIntents = [
+    {
+        id: 'greeting',
+        patterns: [
+            'hi', 'hello', 'hey', 'greetings', 'howdy', 'what\'s up', 
+            'good morning', 'good afternoon', 'good evening'
+        ],
+        responses: [
+            'Hello! I\'m the BloodBridge AI Assistant. How can I help you today?',
+            'Hi there! I\'m ready to assist you with blood donation information.',
+            'Greetings! What questions do you have about donating blood?',
+            'Welcome to BloodBridge! I\'m here to help you save lives through blood donation.',
+            'Hello! Interested in making a difference? Let\'s talk about blood donation.'
+        ]
+    },
+    {
+        id: 'donation_process',
+        patterns: [
+            'how to donate', 'donation process', 'steps to donate', 
+            'how do i donate', 'blood donation procedure',
+            'what happens during donation'
+        ],
+        responses: [
+            'Blood Donation Process:\n1. Registration\n2. Medical History & Mini-Physical\n3. Donation (10-15 minutes)\n4. Recovery & Refreshments\n\nTotal time: About 1-2 hours',
+            'Donation Steps:\n- Check online eligibility\n- Schedule appointment\n- Bring valid ID\n- Complete health questionnaire\n- Quick medical screening\n- Donate blood\n- Rest and enjoy complimentary snacks',
+            'What to Expect:\n- Warm welcome by staff\n- Private medical review\n- Comfortable donation chair\n- Sterile, safe environment\n- Post-donation care and refreshments'
+        ]
+    },
+    {
+        id: 'eligibility',
+        patterns: [
+            'who can donate', 'am i eligible', 'donation requirements', 
+            'can i donate blood', 'eligibility criteria',
+            'restrictions on donation'
+        ],
+        responses: [
+            'Basic Eligibility Requirements:\n- Age: 17-65 years\n- Weight: At least 110 pounds\n- Good general health\n- No recent blood donations\n- No certain medical conditions',
+            'Donation Eligibility Factors:\n1. Age: Minimum 17 (16 with parental consent)\n2. Health: No active infections\n3. Weight: Over 110 pounds\n4. No recent travel to high-risk areas\n5. Not taking certain medications',
+            'Key Considerations:\n- Recent illness\n- Chronic conditions\n- Medication use\n- Travel history\n- Overall physical health'
+        ]
+    },
+    {
+        id: 'medical_conditions',
+        patterns: [
+            'medical conditions and donation', 'can i donate with',
+            'health issues and blood donation', 'medical restrictions',
+            'disqualifying health conditions'
+        ],
+        responses: [
+            'Medical Conditions Affecting Donation:\n- Cannot donate if you have:\n  * HIV/AIDS\n  * Hepatitis B or C\n  * Active cancer\n  * Certain heart conditions\n- Temporary deferrals for:\n  * Recent illness\n  * Some medications\n  * Recent travel',
+            'Health Screening Considerations:\n1. Chronic Conditions\n- Diabetes (if controlled)\n- High blood pressure (if managed)\n- Some autoimmune conditions\n\n2. Medication Impacts\n- Some medications may temporarily disqualify you\n- Consult medical staff for specific guidance',
+            'Donation and Health:\n- Individual assessment is key\n- Medical staff will review your specific situation\n- Honesty about health history is crucial'
+        ]
+    },
+    {
+        id: 'benefits',
+        patterns: [
+            'why donate', 'benefits of donation', 'importance of blood donation', 
+            'how does donation help', 'why is blood donation important',
+            'impact of donating'
+        ],
+        responses: [
+            'Impact of Blood Donation:\n- Saves up to 3 lives per donation\n- Critical for emergency treatments\n- Supports:\n  * Cancer patients\n  * Surgical procedures\n  * Chronic illness management\n- Provides free health screening',
+            'Donation Benefits:\n1. Medical Impact\n- Emergency surgeries\n- Trauma care\n- Cancer treatments\n\n2. Personal Benefits\n- Free health check-up\n- Potential early disease detection\n- Feeling of making a difference',
+            'Why Donate?\n- Community health support\n- Immediate life-saving potential\n- Personal health insights\n- No cost to you\n- Feeling of heroism'
+        ]
+    },
+    {
+        id: 'blood_types',
+        patterns: [
+            'what blood types', 'blood type compatibility', 'blood types',
+            'who can i donate to', 'universal donor', 'universal recipient'
+        ],
+        responses: [
+            'Blood Type Compatibility:\n- O-: Universal donor (can donate to all)\n- AB+: Universal recipient (can receive from all)\n- A+: Can donate to A+ and AB+\n- B+: Can donate to B+ and AB+\n- O+: Can donate to A+, B+, AB+, O+',
+            'Blood Type Donation Guide:\n1. Universal Donor (O-)\n- Rarest type\n- Can donate to ALL blood types\n\n2. Universal Recipient (AB+)\n- Can receive from ALL blood types\n- Least common type',
+            'Blood Type Facts:\n- 8 different blood types\n- Each type has unique donation capabilities\n- Blood banks need all types\n- Your type matters in donation'
+        ]
+    },
+    {
+        id: 'frequency',
+        patterns: [
+            'how often can i donate', 'donation frequency', 
+            'time between donations', 'how many times a year'
+        ],
+        responses: [
+            'Donation Frequency Guidelines:\n- Whole Blood: Every 56 days\n- Platelets: Every 7 days, up to 24 times a year\n- Plasma: Every 28 days, up to 13 times a year',
+            'Donation Intervals:\n1. Whole Blood\n- Minimum: 8 weeks between donations\n- Allows body to replenish red blood cells\n\n2. Special Donations\n- Platelets: More frequent\n- Plasma: More frequent than whole blood',
+            'Donation Limits:\n- Whole Blood: 6 times per year\n- Platelets: Up to 24 times\n- Plasma: Up to 13 times\n- Individual health determines exact eligibility'
+        ]
+    },
+    {
+        id: 'preparation',
+        patterns: [
+            'how to prepare for donation', 'what should i do before donating',
+            'preparation for blood donation', 'tips before donating'
+        ],
+        responses: [
+            'Preparing for Donation:\n1. Hydration\n- Drink plenty of water\n- Avoid alcohol\n\n2. Nutrition\n- Eat iron-rich foods\n- Have a healthy meal\n- Avoid fatty foods\n\n3. Rest\n- Get good sleep\n- Avoid strenuous exercise',
+            'Pre-Donation Checklist:\n- Drink 16 oz water before donation\n- Eat iron-rich foods\n- Get 7-9 hours of sleep\n- Wear comfortable clothing\n- Bring valid ID\n- Know medical history',
+            'What to Do Before Donating:\n- Stay hydrated\n- Eat balanced meals\n- Get adequate rest\n- Wear comfortable clothes\n- Bring identification\n- Be prepared for quick medical screening'
+        ]
+    },
+    {
+        id: 'after_donation',
+        patterns: [
+            'what to do after donating', 'post donation care',
+            'recovery after blood donation', 'side effects'
+        ],
+        responses: [
+            'Post-Donation Care:\n1. Immediate After-Donation\n- Rest for 10-15 minutes\n- Drink plenty of fluids\n- Eat light snacks\n\n2. Next 24 Hours\n- Avoid heavy lifting\n- Stay hydrated\n- Eat iron-rich foods',
+            'Recovery Guidelines:\n- Drink extra fluids\n- Eat well-balanced meals\n- Avoid strenuous activities\n- Keep bandage on\n- Rest if feeling tired\n- Avoid alcohol',
+            'What to Expect:\n- Possible mild fatigue\n- Slight bruising at needle site\n- Quick recovery for most donors\n- Body rapidly replaces donated blood'
+        ]
+    },
+    {
+        id: 'platform_info',
+        patterns: [
+            'about bloodbridge', 'how does bloodbridge work', 
+            'bloodbridge mission', 'platform information'
+        ],
+        responses: [
+            'About BloodBridge:\n- Connecting donors and recipients\n- Streamlined blood donation process\n- Free health screenings\n- Community-focused platform\n- Saving lives through technology',
+            'BloodBridge Mission:\n- Simplify blood donation\n- Increase blood supply\n- Save lives\n- Provide education\n- Build a supportive donor community',
+            'Our Platform:\n- Easy registration\n- Comprehensive health screening\n- Appointment scheduling\n- Educational resources\n- Donor tracking and support'
+        ]
+    },
+    {
+        id: 'special_donations',
+        patterns: [
+            'types of donation', 'different donation methods',
+            'platelet donation', 'plasma donation', 
+            'what can i donate besides whole blood'
+        ],
+        responses: [
+            'Donation Types:\n1. Whole Blood\n- Most common\n- Takes 10-15 minutes\n\n2. Platelet Donation\n- Helps cancer patients\n- Takes 2-3 hours\n\n3. Plasma Donation\n- Creates medical products\n- Can donate more frequently',
+            'Specialized Donation Methods:\n- Whole Blood\n- Platelet Donation\n- Plasma Donation\n- Double Red Cell Donation\n\nEach type supports different medical needs',
+            'Beyond Whole Blood:\n- Platelets for cancer treatments\n- Plasma for medical products\n- Double red cell donation\n- Each type saves lives differently'
+        ]
+    }
+];
+
+    function findBestMatch(userMessage) {
+        const lowercaseMessage = userMessage.toLowerCase();
+        
+        // Find best matching intent
+        const matches = expandedIntents.filter(intent => 
+            intent.patterns.some(pattern => 
+                lowercaseMessage.includes(pattern.toLowerCase())
+            )
+        );
+
+        // Return a random response from the best match
+        if (matches.length > 0) {
+            const bestMatch = matches[0];
+            return bestMatch.responses[Math.floor(Math.random() * bestMatch.responses.length)];
+        }
+
+        // Fallback responses for unknown queries
+        const fallbackResponses = [
+            'I\'m not sure I completely understand. Could you rephrase that?',
+            'That\'s an interesting question. Could you provide more context about blood donation?',
+            'I can help with questions about blood donation. Could you be more specific?'
+        ];
+
+        return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+    }
+
+    function addMessage(text, sender) {
+        const messageEl = document.createElement('div');
+        messageEl.classList.add('message', sender);
+        messageEl.textContent = text;
+        
+        messagesContainer.appendChild(messageEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Show new message badge when chatbot is closed
+        if (chatbotWindow.style.display === 'none' && sender === 'bot') {
+            newMessageBadge.style.display = 'block';
+        }
+    }
+
+    function sendMessage() {
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        // Add user message
+        addMessage(message, 'user');
+        
+        // Generate bot response
+        const botResponse = findBestMatch(message);
+        
+        // Clear input
+        inputField.value = '';
+        
+        // Add bot response with a slight delay
+        setTimeout(() => {
+            addMessage(botResponse, 'bot');
+        }, 500);
+    }
+
+    // Quick suggestion buttons
+    document.querySelectorAll('.quick-suggestion').forEach(btn => {
+        btn.addEventListener('click', () => {
+            inputField.value = btn.textContent;
+            sendMessage();
+        });
+    });
+
+    // Toggle chatbot visibility
+    toggleBtn.addEventListener('click', () => {
+        chatbotWindow.style.display = 'flex';
+        toggleBtn.style.display = 'none';
+        newMessageBadge.style.display = 'none';
+    });
+
+    // Close chatbot
+    closeBtn.addEventListener('click', () => {
+        chatbotWindow.style.display = 'none';
+        toggleBtn.style.display = 'block';
+    });
+
+    // Send message on button click
+    sendBtn.addEventListener('click', sendMessage);
+
+    // Send message on Enter key press
+    inputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+});
+</script>
+    <footer class="footer py-4 bg-light mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-3">
+                    <h5 class="text-danger">BloodBridge</h5>
+                    <p class="text-muted">Connecting donors and recipients to save lives through blood donation.</p>
+                    <div class="social-icons">
+                        <a href="#" class="text-danger me-2"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-danger me-2"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-danger me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-danger"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-3">
+                    <h6 class="text-uppercase fw-bold mb-3">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}" class="text-decoration-none text-muted">Home</a></li>
+                        <li><a href="{{ url_for('donation_tips') }}" class="text-decoration-none text-muted">Donation Tips</a></li>
+                        <li><a href="{{ url_for('eligibility_check') }}" class="text-decoration-none text-muted">Eligibility</a></li>
+                        <li><a href="{{ url_for('faq') }}" class="text-decoration-none text-muted">FAQs</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-3">
+                    <h6 class="text-uppercase fw-bold mb-3">About</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('teams') }}" class="text-decoration-none text-muted">Our Team</a></li>
+                        <li><a href="{{ url_for('blood_banks') }}" class="text-decoration-none text-muted">Blood Banks</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="text-decoration-none text-muted">Contact Us</a></li>
+                        <li><a href="{{ url_for('help_support') }}" class="text-decoration-none text-muted">Help & Support</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h6 class="text-uppercase fw-bold mb-3">Contact</h6>
+                    <p class="text-muted">
+                        <i class="fas fa-map-marker-alt text-danger me-2"></i> 123 Health Street, Medical District
+                    </p>
+                    <p class="text-muted">
+                        <i class="fas fa-phone text-danger me-2"></i> 1-800-BLOOD-HELP
+                    </p>
+                    <p class="text-muted">
+                        <i class="fas fa-envelope text-danger me-2"></i> info@bloodbridge.com
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6 text-md-start text-center">
+                    <small class="text-muted">&copy; 2024 BloodBridge. All rights reserved.</small>
+                </div>
+                <div class="col-md-6 text-md-end text-center">
+                    <small class="text-muted">
+                        <a href="#" class="text-decoration-none text-muted me-3">Privacy Policy</a>
+                        <a href="#" class="text-decoration-none text-muted">Terms of Service</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-bell text-danger me-2"></i>
+                <strong class="me-auto" id="toastTitle"></strong>
+                <small id="toastTime">just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+    
+    <script>
+    // Function to show a notification toast
+    function showNotificationToast(title, message, type = 'info') {
+        const toast = document.getElementById('notificationToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        // Set content
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        // Remove existing color classes and add new one
+        toast.className = 'toast';
+        toast.classList.add('bg-light');
+        toast.classList.add('border-' + type);
+        
+        // Show the toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+    
+    // Function to update notification badge
+    function updateNotificationBadge(count) {
+        const dropdown = document.getElementById('notificationDropdown');
+        if (!dropdown) return;
+        
+        let badge = dropdown.querySelector('.badge');
+        
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge-new';
+                dropdown.appendChild(badge);
+            }
+            badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+    
+    // Example usage: Show a notification when a new blood request matches
+    // showNotificationToast('Blood Request Match', 'A new blood request matches your blood type!', 'danger');
+    </script>
+</body>
+</html>

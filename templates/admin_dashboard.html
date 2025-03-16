@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="welcome-section mb-4">
+        <h1 class="text-danger">Welcome, Admin!</h1>
+        <p class="lead">
+            Manage donors, receivers, blood requests, and system operations from your centralized dashboard.
+        </p>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Pending Verifications</h5>
+                            <h2 class="mb-0">{{ pending_verifications_count }}</h2>
+                        </div>
+                        <i class="fas fa-user-check fa-3x"></i>
+                    </div>
+                    <a href="{{ url_for('admin_verifications') }}" class="btn btn-light btn-sm mt-3">Review</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Blood Requests</h5>
+                            <h2 class="mb-0">{{ pending_requests_count }}</h2>
+                        </div>
+                        <i class="fas fa-hand-holding-medical fa-3x"></i>
+                    </div>
+                    <a href="{{ url_for('blood_requests') }}" class="btn btn-light btn-sm mt-3">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Pending Donations</h5>
+                            <h2 class="mb-0">{{ pending_donations_count }}</h2>
+                        </div>
+                        <i class="fas fa-tint fa-3x"></i>
+                    </div>
+                    <a href="#" class="btn btn-light btn-sm mt-3">Review</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Admin Actions</h5>
+                            <h2 class="mb-0">{{ recent_admin_logs|length }}</h2>
+                        </div>
+                        <i class="fas fa-clipboard-list fa-3x"></i>
+                    </div>
+                    <a href="#adminLogsModal" class="btn btn-light btn-sm mt-3" data-bs-toggle="modal">View Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="row">
+        <!-- Blood Requests -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Blood Requests</h5>
+                    <a href="{{ url_for('blood_requests') }}" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Blood Type</th>
+                                    <th>Urgency</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in blood_requests %}
+                                    <tr>
+                                        <td>#{{ request.id }}</td>
+                                        <td><span class="badge bg-danger">{{ request.blood_type }}</span></td>
+                                        <td>
+                                            {% if request.urgency == 'emergency' %}
+                                                <span class="badge bg-danger">Emergency</span>
+                                            {% elif request.urgency == 'urgent' %}
+                                                <span class="badge bg-warning">Urgent</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Normal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if request.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif request.status == 'fulfilled' %}
+                                                <span class="badge bg-success">Fulfilled</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ request.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger">Review</button>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">No recent blood requests</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blood Stock Levels -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Blood Stock Levels</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="bloodStockChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Verifications and Donations -->
+    <div class="row mt-4">
+        <!-- Recent Verifications -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Verifications</h5>
+                    <a href="{{ url_for('admin_verifications') }}" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Donor</th>
+                                    <th>Submitted</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for verification in recent_verifications %}
+                                    <tr><td>
+                                            {{ verification.donor.first_name }} {{ verification.donor.last_name }}
+                                        </td>
+                                        <td>{{ verification.submission_date.strftime('%d %b %Y') }}</td>
+                                        <td>
+                                            {% if verification.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif verification.status == 'approved' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% elif verification.status == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('review_verification', verification_id=verification.id) }}" 
+                                               class="btn btn-sm btn-outline-danger">
+                                                Review
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-3">No recent verifications</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Donations -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Donations</h5>
+                    <a href="#" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Donor</th>
+                                    <th>Blood Type</th>
+                                    <th>Date</th>
+                                    <th>Units</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for donation in donations %}
+                                    <tr>
+                                        <td>{{ donation.donor.first_name }} {{ donation.donor.last_name }}</td>
+                                        <td><span class="badge bg-danger">{{ donation.blood_type }}</span></td>
+                                        <td>{{ donation.donation_date.strftime('%d %b %Y') }}</td>
+                                        <td>{{ donation.units }}</td>
+                                        <td>
+                                            {% if donation.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif donation.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ donation.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">No recent donations</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- Add this after the existing action buttons in the admin dashboard -->
+<div class="row mt-4">
+    <div class="col-12 mb-4">
+        <h4 class="text-danger">Content Management</h4>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-comments fa-lg"></i>
+                </div>
+                <h5 class="card-title">Testimonials</h5>
+                <p class="card-text small">Manage testimonials displayed on the homepage</p>
+                <a href="{{ url_for('admin_testimonials') }}" class="btn btn-outline-danger w-100">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-chart-pie fa-lg"></i>
+                </div>
+                <h5 class="card-title">Impact Stats</h5>
+                <p class="card-text small">Manage impact statistics shown on the homepage</p>
+                <a href="{{ url_for('admin_impact_stats') }}" class="btn btn-outline-danger w-100">Manage</a>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Admin Activity Logs Modal -->
+    <div class="modal fade" id="adminLogsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recent Admin Actions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Admin</th>
+                                    <th>Action</th>
+                                    <th>Target User</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_admin_logs %}
+                                    <tr>
+                                        <td>{{ log.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                                        <td>{{ log.admin.first_name }} {{ log.admin.last_name }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ log.action_type.replace('_', ' ').title() }}</span>
+                                        </td>
+                                        <td>
+                                            {% if log.target_user %}
+                                                {{ log.target_user.first_name }} {{ log.target_user.last_name }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.details %}
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        data-bs-toggle="popover" 
+                                                        title="Action Details" 
+                                                        data-bs-content="{{ log.details }}">
+                                                    View Details
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">No details</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">No recent admin actions</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize blood stock chart
+        const ctx = document.getElementById('bloodStockChart').getContext('2d');
+        
+        // Blood type data
+        const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        const currentStock = [65, 45, 75, 35, 25, 15, 85, 55];
+        const optimalStock = [100, 70, 100, 60, 50, 40, 120, 80];
+        
+        // Create gradient for bars
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(220, 53, 69, 0.8)');
+        gradient.addColorStop(1, 'rgba(220, 53, 69, 0.4)');
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: bloodTypes,
+                datasets: [
+                    {
+                        label: 'Current Stock (units)',
+                        data: currentStock,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    },
+                    {
+                        label: 'Optimal Stock Level',
+                        data: optimalStock,
+                        type: 'line',
+                        borderColor: 'rgba(0, 123, 255, 0.7)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(0, 123, 255, 0.8)',
+                        pointRadius: 4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.parsed.y + ' units';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Units'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Blood Type'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize popover for action details
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

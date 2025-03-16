@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-danger mb-4">Test Notifications</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Generate Test Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-info" onclick="createTestNotification('info')">
+                            <i class="fas fa-info-circle me-2"></i> Create Info Notification
+                        </button>
+                        
+                        <button class="btn btn-success" onclick="createTestNotification('success')">
+                            <i class="fas fa-check-circle me-2"></i> Create Success Notification
+                        </button>
+                        
+                        <button class="btn btn-warning" onclick="createTestNotification('warning')">
+                            <i class="fas fa-exclamation-circle me-2"></i> Create Warning Notification
+                        </button>
+                        
+                        <button class="btn btn-danger" onclick="createTestNotification('danger')">
+                            <i class="fas fa-times-circle me-2"></i> Create Danger Notification
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Test Notifications</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentNotifications">
+                        {% for notification in recent_notifications %}
+                            <div class="list-group-item">
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="mb-1 small">{{ notification.message }}</p>
+                                <small class="text-muted">{{ notification.created_at|timeago }}</small>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <p class="text-muted mb-0">No test notifications yet</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+function createTestNotification(type) {
+    fetch('{{ url_for("create_test_notification") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ type: type })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show the notification toast
+            showNotificationToast(data.notification.title, data.notification.message, type);
+            
+            // Update the recent notifications list
+            const recentList = document.getElementById('recentNotifications');
+            const newNotif = document.createElement('div');
+            newNotif.className = 'list-group-item';
+            newNotif.innerHTML = `
+                <h6 class="mb-1">${data.notification.title}</h6>
+                <p class="mb-1 small">${data.notification.message}</p>
+                <small class="text-muted">just now</small>
+            `;
+            
+            // Add to top of list
+            if (recentList.firstChild) {
+                recentList.insertBefore(newNotif, recentList.firstChild);
+            } else {
+                recentList.innerHTML = '';
+                recentList.appendChild(newNotif);
+            }
+            
+            // Update the notification badge in navbar
+            updateNotificationBadge(data.unread_count);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}
+{% endblock %}
