@@ -2,77 +2,220 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="text-danger mb-4">Our Team</h1>
-    
-    <div class="row">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="text-danger mb-3">Our Team</h1>
+            <p class="lead">Meet the dedicated professionals working to save lives through blood donation</p>
+        </div>
+    </div>
+
+    <!-- Leadership Team -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Leadership Team</h2>
+        </div>
+        
+        <!-- Leadership Members -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-user-md fa-4x text-danger"></i>
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 150px; height: 150px;">
+                        <img src="{{ url_for('static', filename='images/team/director.jpg') }}" alt="Medical Director" class="img-fluid" 
+                             onerror="this.src='https://via.placeholder.com/150?text=MD'">
                     </div>
-                    <h5 class="card-title">Medical Team</h5>
-                    <p class="card-text">Our medical professionals ensure safe and efficient blood donation processes.</p>
-                    <ul class="list-unstyled">
-                        <li>Qualified Physicians</li>
-                        <li>Registered Nurses</li>
-                        <li>Lab Technicians</li>
-                        <li>Healthcare Coordinators</li>
-                    </ul>
+                    <h5 class="card-title">Dr. Sarah Johnson</h5>
+                    <p class="text-muted">Medical Director</p>
+                    <p class="card-text">20+ years experience in transfusion medicine and blood bank management.</p>
+                    <div class="social-links">
+                        <a href="#" class="text-danger me-2"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-danger"><i class="fas fa-envelope"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-hands-helping fa-4x text-danger"></i>
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 150px; height: 150px;">
+                        <img src="{{ url_for('static', filename='images/team/operations.jpg') }}" alt="Operations Manager" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/150?text=OM'">
                     </div>
-                    <h5 class="card-title">Support Staff</h5>
-                    <p class="card-text">Dedicated to providing excellent donor and recipient support.</p>
-                    <ul class="list-unstyled">
-                        <li>Donor Relations</li>
-                        <li>Patient Coordinators</li>
-                        <li>Administrative Staff</li>
-                        <li>Volunteer Coordinators</li>
-                    </ul>
+                    <h5 class="card-title">Michael Chen</h5>
+                    <p class="text-muted">Operations Manager</p>
+                    <p class="card-text">Expert in healthcare operations and blood supply chain management.</p>
+                    <div class="social-links">
+                        <a href="#" class="text-danger me-2"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-danger"><i class="fas fa-envelope"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-laptop-code fa-4x text-danger"></i>
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 150px; height: 150px;">
+                        <img src="{{ url_for('static', filename='images/team/tech.jpg') }}" alt="Technical Lead" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/150?text=TL'">
                     </div>
-                    <h5 class="card-title">Technical Team</h5>
-                    <p class="card-text">Managing our digital infrastructure and blood bank systems.</p>
-                    <ul class="list-unstyled">
-                        <li>System Administrators</li>
-                        <li>Database Managers</li>
-                        <li>Software Developers</li>
-                        <li>IT Support</li>
-                    </ul>
+                    <h5 class="card-title">Emma Rodriguez</h5>
+                    <p class="text-muted">Technical Lead</p>
+                    <p class="card-text">Leading innovation in blood donation technology and digital systems.</p>
+                    <div class="social-links">
+                        <a href="#" class="text-danger me-2"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-danger"><i class="fas fa-envelope"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-4">
+    <!-- Medical Team -->
+    <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm">
+            <h2 class="text-center mb-4">Medical Team</h2>
+        </div>
+        
+        <!-- Medical Team Members -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
                 <div class="card-body">
-                    <h5 class="card-title text-danger">Join Our Team</h5>
-                    <p class="card-text">
-                        We're always looking for passionate individuals to join our mission of saving lives through blood donation.
-                        If you're interested in joining our team, please send your resume to careers@bloodbank.com
-                    </p>
-                    <a href="{{ url_for('contact') }}" class="btn btn-danger">Contact Us</a>
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/doctor1.jpg') }}" alt="Doctor" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=MD'">
+                    </div>
+                    <h5 class="card-title">Dr. James Wilson</h5>
+                    <p class="text-muted">Blood Bank Physician</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/nurse1.jpg') }}" alt="Nurse" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=RN'">
+                    </div>
+                    <h5 class="card-title">Maria Santos</h5>
+                    <p class="text-muted">Senior Nurse</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/tech1.jpg') }}" alt="Technician" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=LT'">
+                    </div>
+                    <h5 class="card-title">David Park</h5>
+                    <p class="text-muted">Lab Technician</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/counselor1.jpg') }}" alt="Counselor" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=DC'">
+                    </div>
+                    <h5 class="card-title">Lisa Thompson</h5>
+                    <p class="text-muted">Donor Counselor</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Team -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Support Team</h2>
+        </div>
+        
+        <!-- Support Team Members -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/coordinator1.jpg') }}" alt="Coordinator" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=DC'">
+                    </div>
+                    <h5 class="card-title">Alex Kim</h5>
+                    <p class="text-muted">Donor Relations</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/support1.jpg') }}" alt="Support" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=CS'">
+                    </div>
+                    <h5 class="card-title">Rachel Foster</h5>
+                    <p class="text-muted">Customer Support</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/admin1.jpg') }}" alt="Admin" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=AA'">
+                    </div>
+                    <h5 class="card-title">Tom Mitchell</h5>
+                    <p class="text-muted">Administrative Assistant</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="rounded-circle overflow-hidden mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img src="{{ url_for('static', filename='images/team/volunteer1.jpg') }}" alt="Volunteer" class="img-fluid"
+                             onerror="this.src='https://via.placeholder.com/120?text=VC'">
+                    </div>
+                    <h5 class="card-title">Nina Patel</h5>
+                    <p class="text-muted">Volunteer Coordinator</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Us Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center py-5">
+                    <h3 class="mb-3">Join Our Team</h3>
+                    <p class="lead mb-4">We're always looking for passionate individuals to join our mission of saving lives through blood donation.</p>
+                    <a href="{{ url_for('contact') }}" class="btn btn-danger btn-lg">Contact Us</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.social-links a {
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+</style>
 {% endblock %}

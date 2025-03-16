@@ -2,125 +2,222 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="text-danger mb-4">Can I Give Blood?</h1>
-    
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="text-danger mb-3">Blood Donation Eligibility Check</h1>
+            <p class="lead">Answer a few questions to check if you're eligible to donate blood</p>
+        </div>
+    </div>
+
     <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
                 <div class="card-body">
-                    <h4 class="text-danger mb-4">Basic Eligibility Requirements</h4>
-                    
-                    <div class="mb-4">
-                        <h5><i class="fas fa-check-circle text-success me-2"></i>You can donate if you:</h5>
-                        <ul class="list-unstyled ms-4">
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Are at least 17 years old (16 with parental consent in some states)</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Weigh at least 110 pounds</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Are in good general health</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Haven't donated whole blood in the last 56 days</li>
-                        </ul>
-                    </div>
+                    <form id="eligibilityForm">
+                        <!-- Basic Information -->
+                        <div class="section mb-4">
+                            <h4 class="mb-3">Basic Information</h4>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" name="age" required min="16" max="100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Weight (kg)</label>
+                                    <input type="number" class="form-control" name="weight" required min="0">
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-4">
-                        <h5><i class="fas fa-times-circle text-danger me-2"></i>You cannot donate if you:</h5>
-                        <ul class="list-unstyled ms-4">
-                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Have a cold, flu, or other acute illness</li>
-                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Have certain chronic illnesses</li>
-                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Are pregnant</li>
-                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Have traveled to certain countries in the past year</li>
-                        </ul>
-                    </div>
+                        <!-- Health Questions -->
+                        <div class="section mb-4">
+                            <h4 class="mb-3">Health Assessment</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Have you donated blood in the last 8 weeks?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_donation" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_donation" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Have you had any illness or infection in the past 2 weeks?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_illness" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_illness" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Are you currently taking any medication?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="medication" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="medication" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Have you had surgery in the last 6 months?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_surgery" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recent_surgery" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Do you have any chronic medical conditions?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="chronic_condition" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="chronic_condition" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lifestyle Questions -->
+                        <div class="section mb-4">
+                            <h4 class="mb-3">Lifestyle & Travel</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Have you traveled to any high-risk areas in the past 12 months?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="travel_history" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="travel_history" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Do you engage in high-risk activities?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="risk_activities" value="yes" required>
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="risk_activities" value="no">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg">Check Eligibility</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="text-danger mb-4">Health Conditions to Consider</h4>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Condition</th>
-                                    <th>Can Donate?</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Diabetes</td>
-                                    <td><span class="badge bg-success">Yes</span></td>
-                                    <td>If well controlled</td>
-                                </tr>
-                                <tr>
-                                    <td>High Blood Pressure</td>
-                                    <td><span class="badge bg-success">Yes</span></td>
-                                    <td>If controlled with medication</td>
-                                </tr>
-                                <tr>
-                                    <td>Recent Surgery</td>
-                                    <td><span class="badge bg-warning">Maybe</span></td>
-                                    <td>Wait 6-12 months</td>
-                                </tr>
-                                <tr>
-                                    <td>Cancer</td>
-                                    <td><span class="badge bg-danger">No</span></td>
-                                    <td>Active or recent treatment</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <!-- Results Modal -->
+            <div class="modal fade" id="resultsModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Eligibility Results</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="resultsContent">
+                            <!-- Results will be inserted here -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <a href="{{ url_for('register') }}" class="btn btn-danger" id="registerBtn" style="display: none;">Register to Donate</a>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="text-danger">Quick Eligibility Check</h5>
-                    <p>Answer a few questions to check if you're eligible to donate blood:</p>
-                    <a href="#eligibilityQuiz" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#eligibilityQuiz">
-                        Start Quick Check
-                    </a>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="text-danger">Need More Information?</h5>
-                    <p>Contact us for detailed eligibility information:</p>
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('contact') }}" class="btn btn-outline-danger">Contact Us</a>
-                        <a href="{{ url_for('faq') }}" class="btn btn-outline-danger">View FAQs</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="text-danger">Ready to Donate?</h5>
-                    <p>If you meet the eligibility requirements, schedule your donation now:</p>
-                    <a href="{{ url_for('register') }}" class="btn btn-danger w-100">Register to Donate</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Eligibility Quiz Modal -->
-<div class="modal fade" id="eligibilityQuiz" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">Quick Eligibility Check</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>This feature is coming soon!</p>
-                <p>For now, please review the eligibility requirements listed on this page or contact us for specific questions.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+{% block extra_scripts %}
+<script>
+document.getElementById('eligibilityForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Basic eligibility checks
+    let isEligible = true;
+    let messages = [];
+    
+    // Age check
+    if (data.age < 17) {
+        isEligible = false;
+        messages.push("You must be at least 17 years old to donate blood.");
+    } else if (data.age > 65) {
+        messages.push("Donors over 65 may need additional medical evaluation.");
+    }
+    
+    // Weight check
+    if (data.weight < 50) {
+        isEligible = false;
+        messages.push("You must weigh at least 50kg to donate blood.");
+    }
+    
+    // Recent donation
+    if (data.recent_donation === 'yes') {
+        isEligible = false;
+        messages.push("You must wait at least 8 weeks between whole blood donations.");
+    }
+    
+    // Recent illness
+    if (data.recent_illness === 'yes') {
+        isEligible = false;
+        messages.push("You should be free from illness for at least 2 weeks before donating.");
+    }
+    
+    // Surgery
+    if (data.recent_surgery === 'yes') {
+        isEligible = false;
+        messages.push("You must wait at least 6 months after surgery before donating.");
+    }
+    
+    // Show results
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    const resultsContent = document.getElementById('resultsContent');
+    const registerBtn = document.getElementById('registerBtn');
+    
+    resultsContent.innerHTML = `
+        <div class="text-center mb-3">
+            <i class="fas fa-${isEligible ? 'check-circle text-success' : 'exclamation-circle text-danger'} fa-3x"></i>
+            <h4 class="mt-2">${isEligible ? 'You may be eligible to donate!' : 'You may not be eligible at this time'}</h4>
         </div>
-    </div>
-</div>
+        ${messages.length > 0 ? '<ul class="mb-3">' + messages.map(msg => `<li>${msg}</li>`).join('') + '</ul>' : ''}
+        <p class="mb-0">
+            ${isEligible ? 
+                'Please note that this is just a preliminary check. Final eligibility will be determined during your pre-donation screening.' :
+                'Please wait until you meet all eligibility criteria before attempting to donate.'}
+        </p>
+    `;
+    
+    registerBtn.style.display = isEligible ? 'block' : 'none';
+    resultsModal.show();
+});
+</script>
+{% endblock %}
 {% endblock %}

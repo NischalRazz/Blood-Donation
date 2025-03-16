@@ -2,66 +2,300 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="text-danger mb-4">Frequently Asked Questions</h1>
-    
-    <div class="accordion" id="faqAccordion">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="heading1">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
-                    Who can donate blood?
-                </button>
-            </h2>
-            <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Generally, you can donate blood if you:
-                    <ul>
-                        <li>Are at least 16-17 years old (age requirements vary by location)</li>
-                        <li>Weigh at least 110 pounds</li>
-                        <li>Are in good health</li>
-                        <li>Haven't donated blood in the last 56 days</li>
-                    </ul>
-                </div>
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="text-danger mb-3">Frequently Asked Questions</h1>
+            <p class="lead">Find answers to common questions about blood donation</p>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="fas fa-search text-danger"></i>
+                </span>
+                <input type="text" class="form-control" id="faqSearch" placeholder="Search FAQ...">
             </div>
         </div>
+    </div>
 
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="heading2">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
-                    How often can I donate blood?
-                </button>
-            </h2>
-            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    You can donate whole blood every 56 days (8 weeks). Platelet donation can be done every 7 days, up to 24 times a year.
-                </div>
-            </div>
+    <!-- FAQ Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills justify-content-center" id="faqTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#general">General</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#eligibility">Eligibility</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#process">Donation Process</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#safety">Safety</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#after">After Donation</button>
+                </li>
+            </ul>
         </div>
+    </div>
 
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="heading3">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
-                    How long does the donation process take?
-                </button>
-            </h2>
-            <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    The entire process takes about an hour, but the actual blood donation only takes about 8-10 minutes.
+    <!-- FAQ Content -->
+    <div class="row">
+        <div class="col-12">
+            <div class="tab-content" id="faqTabContent">
+                <!-- General Questions -->
+                <div class="tab-pane fade show active" id="general">
+                    <div class="accordion" id="generalAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#general1">
+                                    Why should I donate blood?
+                                </button>
+                            </h2>
+                            <div id="general1" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    Blood donation is crucial because:
+                                    <ul>
+                                        <li>One donation can save up to three lives</li>
+                                        <li>Blood is needed every two seconds</li>
+                                        <li>It's essential for surgeries, cancer treatments, and emergencies</li>
+                                        <li>No artificial substitute for human blood exists</li>
+                                        <li>Regular donations ensure a stable blood supply</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#general2">
+                                    How often can I donate blood?
+                                </button>
+                            </h2>
+                            <div id="general2" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <p>The frequency depends on the type of donation:</p>
+                                    <ul>
+                                        <li>Whole Blood: Every 56 days (8 weeks)</li>
+                                        <li>Platelets: Every 7 days, up to 24 times per year</li>
+                                        <li>Plasma: Every 28 days, up to 13 times per year</li>
+                                        <li>Double Red Cells: Every 112 days (16 weeks)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="heading4">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4">
-                    Is it safe to donate blood during COVID-19?
-                </button>
-            </h2>
-            <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Yes, blood donation centers have implemented additional safety measures including social distancing, enhanced disinfecting procedures, and temperature checks.
+                <!-- Eligibility Questions -->
+                <div class="tab-pane fade" id="eligibility">
+                    <div class="accordion" id="eligibilityAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#eligibility1">
+                                    What are the basic eligibility requirements?
+                                </button>
+                            </h2>
+                            <div id="eligibility1" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    Basic requirements include:
+                                    <ul>
+                                        <li>Age: 17 years or older (16 with parental consent in some areas)</li>
+                                        <li>Weight: At least 110 pounds (50 kg)</li>
+                                        <li>Good general health</li>
+                                        <li>Valid ID</li>
+                                        <li>Pass basic health screening</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#eligibility2">
+                                    What medical conditions affect eligibility?
+                                </button>
+                            </h2>
+                            <div id="eligibility2" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    Some conditions that may affect eligibility:
+                                    <ul>
+                                        <li>Recent infections or illnesses</li>
+                                        <li>Low hemoglobin or iron levels</li>
+                                        <li>High or low blood pressure</li>
+                                        <li>Certain medications</li>
+                                        <li>Recent travel to certain regions</li>
+                                    </ul>
+                                    <p>Please consult with our medical staff for specific guidance.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Donation Process -->
+                <div class="tab-pane fade" id="process">
+                    <div class="accordion" id="processAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#process1">
+                                    What happens during the donation process?
+                                </button>
+                            </h2>
+                            <div id="process1" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    The donation process includes:
+                                    <ol>
+                                        <li>Registration and identification check</li>
+                                        <li>Health history questionnaire</li>
+                                        <li>Mini-physical (temperature, blood pressure, pulse, hemoglobin)</li>
+                                        <li>The actual donation (about 8-10 minutes)</li>
+                                        <li>Refreshments and short rest</li>
+                                    </ol>
+                                    <p>The entire process typically takes about one hour.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#process2">
+                                    What should I do before donating?
+                                </button>
+                            </h2>
+                            <div id="process2" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    Preparation tips:
+                                    <ul>
+                                        <li>Get a good night's sleep</li>
+                                        <li>Eat a healthy meal within 2-3 hours before donation</li>
+                                        <li>Drink plenty of fluids</li>
+                                        <li>Wear comfortable clothing with sleeves that roll up easily</li>
+                                        <li>Bring your ID and list of medications</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety Questions -->
+                <div class="tab-pane fade" id="safety">
+                    <div class="accordion" id="safetyAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#safety1">
+                                    Is it safe to donate blood?
+                                </button>
+                            </h2>
+                            <div id="safety1" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <p>Yes, blood donation is completely safe:</p>
+                                    <ul>
+                                        <li>All equipment is sterile and used only once</li>
+                                        <li>The process is conducted by trained professionals</li>
+                                        <li>Your body replaces the donated blood quickly</li>
+                                        <li>Regular health screening ensures your safety</li>
+                                        <li>Recovery is quick and monitored</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#safety2">
+                                    How is my donated blood tested and stored?
+                                </button>
+                            </h2>
+                            <div id="safety2" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <p>Your donation undergoes:</p>
+                                    <ul>
+                                        <li>Comprehensive testing for infectious diseases</li>
+                                        <li>Blood type verification</li>
+                                        <li>Storage in temperature-controlled conditions</li>
+                                        <li>Regular quality checks</li>
+                                        <li>Careful tracking and documentation</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- After Donation -->
+                <div class="tab-pane fade" id="after">
+                    <div class="accordion" id="afterAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#after1">
+                                    What should I do after donating?
+                                </button>
+                            </h2>
+                            <div id="after1" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    After donation care:
+                                    <ul>
+                                        <li>Rest for 10-15 minutes in the recovery area</li>
+                                        <li>Drink plenty of fluids for the next 24-48 hours</li>
+                                        <li>Avoid strenuous physical activity for 24 hours</li>
+                                        <li>Keep the bandage on for several hours</li>
+                                        <li>Eat well and stay hydrated</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#after2">
+                                    When can I donate again?
+                                </button>
+                            </h2>
+                            <div id="after2" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <p>Donation intervals vary by type:</p>
+                                    <ul>
+                                        <li>Wait at least 56 days between whole blood donations</li>
+                                        <li>Platelet donors can donate every 7 days</li>
+                                        <li>Plasma donors should wait 28 days</li>
+                                        <li>Double red cell donors wait 112 days</li>
+                                    </ul>
+                                    <p>Your donation history will be tracked in your profile.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{% block extra_scripts %}
+<script>
+// FAQ Search Functionality
+document.getElementById('faqSearch').addEventListener('input', function(e) {
+    const searchText = e.target.value.toLowerCase();
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    
+    accordionItems.forEach(item => {
+        const question = item.querySelector('.accordion-button').textContent.toLowerCase();
+        const answer = item.querySelector('.accordion-body').textContent.toLowerCase();
+        
+        if (question.includes(searchText) || answer.includes(searchText)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

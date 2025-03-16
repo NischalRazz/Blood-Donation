@@ -2,115 +2,275 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="text-danger mb-4">Blood Donation Tips</h1>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4 class="text-danger">Before Donation</h4>
-                    <ul class="list-unstyled">
-                        <li class="mb-3">
-                            <i class="fas fa-clock text-danger me-2"></i>
-                            Get plenty of sleep the night before
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-utensils text-danger me-2"></i>
-                            Eat a healthy meal within 2-3 hours before donating
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-tint text-danger me-2"></i>
-                            Drink plenty of water
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-id-card text-danger me-2"></i>
-                            Bring valid ID and list of medications
-                        </li>
-                    </ul>
-                </div>
-            </div>
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="text-danger mb-3">Blood Donation Tips</h1>
+            <p class="lead">Essential guidelines to ensure a safe and successful blood donation</p>
+        </div>
+    </div>
 
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4 class="text-danger">During Donation</h4>
-                    <ul class="list-unstyled">
-                        <li class="mb-3">
-                            <i class="fas fa-couch text-danger me-2"></i>
-                            Wear comfortable clothing
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-heart text-danger me-2"></i>
-                            Relax and stay calm
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-hand-holding-heart text-danger me-2"></i>
-                            Inform staff if you feel unwell
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
+    <!-- Timeline -->
+    <div class="row mb-5">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="text-danger">After Donation</h4>
-                    <ul class="list-unstyled">
-                        <li class="mb-3">
-                            <i class="fas fa-glass-water text-danger me-2"></i>
-                            Drink extra fluids for the next 24-48 hours
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-dumbbell text-danger me-2"></i>
-                            Avoid strenuous physical activity for the rest of the day
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-ban text-danger me-2"></i>
-                            Don't smoke for at least 2 hours
-                        </li>
-                        <li class="mb-3">
-                            <i class="fas fa-band-aid text-danger me-2"></i>
-                            Keep the bandage on for at least 4-5 hours
-                        </li>
-                    </ul>
+                    <h4 class="mb-4">Donation Timeline</h4>
+                    <div class="donation-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-danger">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Days Before Donation</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Get adequate sleep</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Eat iron-rich foods</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Stay hydrated</li>
+                                    <li><i class="fas fa-times text-danger me-2"></i>Avoid fatty foods</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-danger">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Day of Donation</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Eat a light meal</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Wear comfortable clothing</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Bring ID and donor card</li>
+                                    <li><i class="fas fa-times text-danger me-2"></i>Avoid strenuous activities</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-danger">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>After Donation</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Rest for 10-15 minutes</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Have refreshments</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Keep bandage on</li>
+                                    <li><i class="fas fa-times text-danger me-2"></i>Avoid heavy lifting</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preparation Tips -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title text-danger mb-4">
+                        <i class="fas fa-check-circle me-2"></i>Do's
+                    </h4>
+                    <div class="do-list">
+                        <div class="do-item mb-3">
+                            <h5><i class="fas fa-utensils text-success me-2"></i>Nutrition</h5>
+                            <ul>
+                                <li>Eat iron-rich foods (spinach, lean meats)</li>
+                                <li>Have a light meal before donation</li>
+                                <li>Drink plenty of water</li>
+                                <li>Include vitamin C rich foods</li>
+                            </ul>
+                        </div>
+
+                        <div class="do-item mb-3">
+                            <h5><i class="fas fa-bed text-success me-2"></i>Rest</h5>
+                            <ul>
+                                <li>Get at least 7 hours of sleep</li>
+                                <li>Avoid strenuous activities before donation</li>
+                                <li>Take breaks when needed</li>
+                            </ul>
+                        </div>
+
+                        <div class="do-item">
+                            <h5><i class="fas fa-clipboard-list text-success me-2"></i>Preparation</h5>
+                            <ul>
+                                <li>Bring valid identification</li>
+                                <li>Wear comfortable clothing</li>
+                                <li>Schedule donation at convenient time</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card mb-4">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
                 <div class="card-body">
-                    <h4 class="text-danger">Quick Facts</h4>
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-clock fa-2x text-danger me-3"></i>
-                        <div>
-                            <h6 class="mb-0">Donation Time</h6>
-                            <p class="mb-0">Takes only 8-10 minutes</p>
+                    <h4 class="card-title text-danger mb-4">
+                        <i class="fas fa-times-circle me-2"></i>Don'ts
+                    </h4>
+                    <div class="dont-list">
+                        <div class="dont-item mb-3">
+                            <h5><i class="fas fa-ban text-danger me-2"></i>Avoid</h5>
+                            <ul>
+                                <li>Fatty foods before donation</li>
+                                <li>Alcohol for 24 hours before</li>
+                                <li>Smoking on donation day</li>
+                                <li>Heavy meals right before</li>
+                            </ul>
                         </div>
-                    </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-battery-full fa-2x text-danger me-3"></i>
-                        <div>
-                            <h6 class="mb-0">Recovery Time</h6>
-                            <p class="mb-0">Body replenishes within 24 hours</p>
+
+                        <div class="dont-item mb-3">
+                            <h5><i class="fas fa-exclamation-triangle text-danger me-2"></i>Activities</h5>
+                            <ul>
+                                <li>Strenuous exercise before donation</li>
+                                <li>Heavy lifting after donation</li>
+                                <li>Operating heavy machinery immediately after</li>
+                            </ul>
                         </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-calendar fa-2x text-danger me-3"></i>
-                        <div>
-                            <h6 class="mb-0">Next Donation</h6>
-                            <p class="mb-0">Wait 56 days between donations</p>
+
+                        <div class="dont-item">
+                            <h5><i class="fas fa-head-side-cough text-danger me-2"></i>Health</h5>
+                            <ul>
+                                <li>Donate if feeling unwell</li>
+                                <li>Skip meals before donation</li>
+                                <li>Hide medical conditions</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- Post-Donation Care -->
+    <div class="row mb-5">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="text-danger">Need Help?</h4>
-                    <p>If you have any questions about donating blood, please don't hesitate to contact us.</p>
-                    <a href="{{ url_for('contact') }}" class="btn btn-danger w-100">Contact Us</a>
+                    <h4 class="mb-4">After Donation Care</h4>
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-tint text-danger fa-3x"></i>
+                            </div>
+                            <h5 class="text-center">Recovery Time</h5>
+                            <p class="text-center">Rest for 10-15 minutes after donation. Your body will replace the fluid within 24 hours.</p>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-glass-water text-danger fa-3x"></i>
+                            </div>
+                            <h5 class="text-center">Hydration</h5>
+                            <p class="text-center">Drink extra fluids for the next 24-48 hours to help your body recover.</p>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-dumbbell text-danger fa-3x"></i>
+                            </div>
+                            <h5 class="text-center">Activity</h5>
+                            <p class="text-center">Avoid strenuous physical activity for the rest of the day after donating.</p>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-band-aid text-danger fa-3x"></i>
+                            </div>
+                            <h5 class="text-center">Bandage</h5>
+                            <p class="text-center">Keep the bandage on for at least 4-5 hours after donation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Benefits -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h4 class="mb-4">Benefits of Regular Blood Donation</h4>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="benefit-item">
+                                <i class="fas fa-heart text-danger mb-3"></i>
+                                <h5>Heart Health</h5>
+                                <p>Regular donation can reduce the risk of heart attacks and liver ailments.</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="benefit-item">
+                                <i class="fas fa-fire text-danger mb-3"></i>
+                                <h5>Calorie Burn</h5>
+                                <p>Donating blood burns approximately 650 calories per donation.</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="benefit-item">
+                                <i class="fas fa-shield-alt text-danger mb-3"></i>
+                                <h5>New Blood Cells</h5>
+                                <p>Stimulates the production of new blood cells, improving overall health.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.donation-timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    padding-left: 50px;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.timeline-content {
+    border-left: 2px solid #dc3545;
+    padding-left: 20px;
+    padding-bottom: 20px;
+}
+
+.timeline-item:last-child .timeline-content {
+    border-left: none;
+}
+
+.benefit-item {
+    text-align: center;
+    padding: 20px;
+}
+
+.benefit-item i {
+    font-size: 2rem;
+    display: block;
+}
+</style>
 {% endblock %}
