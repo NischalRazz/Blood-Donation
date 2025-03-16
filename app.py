@@ -37,7 +37,7 @@ os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'address_proofs'), exist_o
 
 # Import these after initializing app
 from extensions import db
-from models import User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
+from models import PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
 from utils import admin_required, calculate_blood_compatibility, donor_required, log_admin_action, receiver_required, format_verification_status, calculate_next_donation_date, validate_password_complexity
 
 # Initialize SQLAlchemy
@@ -287,52 +287,89 @@ def admin_verifications():
     pagination = verifications.paginate(page=page, per_page=per_page)
     
     return render_template('admin_verifications.html', pagination=pagination, status_filter=status_filter)
-
-@app.route('/admin/review-verification/<int:verification_id>', methods=['POST'])
+@app.route('/admin/verification-view/<int:verification_id>')
+@login_required
+@admin_required
+def verification_view(verification_id):
+    """Admin page to view a specific verification"""
+    verification = DonorVerification.query.get_or_404(verification_id)
+    
+    # Parse questionnaire responses if present
+    questionnaire = None
+    if verification.questionnaire_responses:
+        try:
+            questionnaire = json.loads(verification.questionnaire_responses)
+        except json.JSONDecodeError:
+            questionnaire = None
+    
+    return render_template('review_verification.html',
+                          verification=verification,
+                          donor=verification.donor,
+                          questionnaire=questionnaire,
+                          now=datetime.utcnow())
+@app.route('/admin/review-verification/<int:verification_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def review_verification(verification_id):
-    try:
-        verification = DonorVerification.query.get_or_404(verification_id)
-        action = request.form.get('action')
-        notes = request.form.get('notes')
-        
-        if action == 'approve':
-            verification.status = 'approved'
-            verification.donor.verification_status = 'approved'
-            verification.donor.is_verified = True
-            
-            # Notify donor of approval
-            notification_handlers['donor_verification_result'](
-                verification.donor_id,
-                'approved'
-            )
-            
-        elif action == 'reject':
-            verification.status = 'rejected'
-            verification.donor.verification_status = 'rejected'
-            verification.donor.is_verified = False
-            
-            # Notify donor of rejection
-            notification_handlers['donor_verification_result'](
-                verification.donor_id,
-                'rejected'
-            )
-        
-        verification.reviewer_id = current_user.id
-        verification.review_date = datetime.utcnow()
-        verification.review_notes = notes
-        
-        db.session.commit()
-        flash(f'Verification has been {verification.status}.', 'success')
-        return redirect(url_for('admin_verifications'))
-        
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Verification review error: {str(e)}")
-        flash('An error occurred while reviewing the verification. Please try again.', 'danger')
-        return redirect(url_for('review_verification', verification_id=verification_id))
+    """Admin page to review a specific verification"""
+    # Get the verification record
+    verification = DonorVerification.query.get_or_404(verification_id)
+    donor = verification.donor
     
+    # Parse questionnaire responses if they exist
+    questionnaire = None
+    if verification.questionnaire_responses:
+        try:
+            questionnaire = json.loads(verification.questionnaire_responses)
+        except json.JSONDecodeError:
+            logging.error(f"Failed to parse questionnaire responses for verification ID {verification_id}")
+    
+    # Handle POST request for approving/rejecting
+    if request.method == 'POST':
+        try:
+            action = request.form.get('action')
+            notes = request.form.get('notes')
+            
+            if action == 'approve':
+                verification.status = 'approved'
+                verification.donor.verification_status = 'approved'
+                verification.donor.is_verified = True
+                
+                # Notify donor of approval
+                notification_handlers['donor_verification_result'](
+                    verification.donor_id,
+                    'approved'
+                )
+                
+            elif action == 'reject':
+                verification.status = 'rejected'
+                verification.donor.verification_status = 'rejected'
+                verification.donor.is_verified = False
+                
+                # Notify donor of rejection
+                notification_handlers['donor_verification_result'](
+                    verification.donor_id,
+                    'rejected'
+                )
+            
+            verification.reviewer_id = current_user.id
+            verification.review_date = datetime.utcnow()
+            verification.review_notes = notes
+            
+            db.session.commit()
+            flash(f'Verification has been {verification.status}.', 'success')
+            return redirect(url_for('admin_verifications'))
+            
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Verification review error: {str(e)}")
+            flash('An error occurred while reviewing the verification. Please try again.', 'danger')
+    
+    # For GET requests, render the template with verification details
+    return render_template('review_verification.html', 
+                           verification=verification,
+                           donor=donor,
+                           questionnaire=questionnaire)
 @app.route('/view-document/<document_type>/<filename>')
 @login_required
 def view_document(document_type, filename):
