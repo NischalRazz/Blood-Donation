@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="certificate-container p-5 text-center">
+    <div class="certificate border border-danger p-5 bg-light">
+        <div class="header mb-5">
+            <img src="{{ url_for('static', filename='images/blood-donation.svg') }}" alt="BloodBridge Logo" class="certificate-logo mb-3">
+            <h1 class="text-danger mb-0">Certificate of Blood Donation</h1>
+            <p class="text-muted">This certifies that</p>
+        </div>
+
+        <div class="donor-name mb-4">
+            <h2 class="display-4 fw-bold">{{ donation.donor.first_name }} {{ donation.donor.last_name }}</h2>
+        </div>
+
+        <div class="certificate-text mb-5">
+            <p class="lead">
+                has successfully donated <strong>{{ donation.units }}</strong> unit{{ 's' if donation.units > 1 else '' }} of 
+                <span class="text-danger fw-bold">{{ donation.blood_type }}</span> blood
+                at <strong>{{ donation.center }}</strong>
+                on <strong>{{ donation.donation_date.strftime('%B %d, %Y') }}</strong>.
+            </p>
+            <p>This generous contribution can help save up to {{ donation.units * 3 }} lives.</p>
+        </div>
+
+        <div class="quote mb-5 fst-italic">
+            "The blood you donate gives someone another chance at life. One day that someone may be a close relative, a friend, a loved one—or even you."
+        </div>
+
+        <div class="signatures row">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="signature-line"></div>
+                <p>Donor Signature</p>
+            </div>
+            <div class="col-md-6">
+                <div class="signature-line"></div>
+                <p>
+                    {{ donation.verified_by or "BloodBridge Authority" }}<br>
+                    <small class="text-muted">BloodBridge Blood Bank</small>
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-5 d-flex justify-content-center">
+            <div class="certificate-stamp">
+                <img src="{{ url_for('static', filename='images/blood-drop-marker.svg') }}" alt="Certified">
+            </div>
+        </div>
+
+        <div class="certificate-footer mt-5">
+            <p class="mb-0 small text-muted">Certificate ID: BB-{{ donation.id }}-{{ donation.donation_date.strftime('%Y%m%d') }}</p>
+            <p class="small text-muted">Verify authenticity at: www.bloodbridge.com/verify</p>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="button" class="btn btn-outline-primary me-2" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Print Certificate
+        </button>
+        <a href="{{ url_for('view_donation', donation_id=donation.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Donation
+        </a>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .certificate-container, .certificate-container * {
+            visibility: visible;
+        }
+        .certificate-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .mt-4, .mt-4 * {
+            visibility: hidden;
+        }
+    }
+    
+    .certificate {
+        position: relative;
+        border-width: 10px !important;
+        border-style: double !important;
+        border-radius: 10px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .certificate-logo {
+        width: 80px;
+    }
+    
+    .signature-line {
+        border-bottom: 1px solid #333;
+        width: 80%;
+        margin: 50px auto 10px;
+    }
+    
+    .certificate-stamp {
+        position: absolute;
+        bottom: 80px;
+        right: 50px;
+        opacity: 0.5;
+        transform: rotate(-15deg);
+    }
+    
+    .certificate-stamp img {
+        width: 120px;
+    }
+</style>
+{% endblock %}

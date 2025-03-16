@@ -25,9 +25,9 @@ def send_email(recipient, subject, body_html, body_text=None):
         # Email configuration - should be moved to environment variables
         smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
-        smtp_username = os.environ.get('SMTP_USERNAME', 'bloodbridge@example.com')
-        smtp_password = os.environ.get('SMTP_PASSWORD', 'your-password')
-        sender_email = os.environ.get('SENDER_EMAIL', 'bloodbridge@example.com')
+        smtp_username = os.environ.get('SMTP_USERNAME', 'noreplybloodbridge@gmail.com')
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'bnjq miad atej kfot')
+        sender_email = os.environ.get('SENDER_EMAIL', 'noreplybloodbridge@gmail.com')
         
         # Create message
         msg = MIMEMultipart('alternative')
@@ -62,7 +62,7 @@ def send_password_reset_email(user, token, reset_url):
     Args:
         user: User object
         token: Password reset token
-        reset_url: Base URL for password reset (e.g., https://example.com/reset-password)
+        reset_url: Base URL for password reset (e.g., http://127.0.0.1:5000/reset-password)
     
     Returns:
         bool: True if the email was sent successfully

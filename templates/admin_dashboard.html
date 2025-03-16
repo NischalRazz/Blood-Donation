@@ -25,6 +25,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
             <div class="card stats-card bg-warning">
                 <div class="card-body">
@@ -248,6 +249,54 @@
 <div class="row mt-4">
     <div class="col-12 mb-4">
         <h4 class="text-danger">Content Management</h4>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-hand-holding-medical fa-lg"></i>
+                </div>
+                <h5 class="card-title">Blood Requests</h5>
+                <p class="card-text small">Manage and process blood requests</p>
+                <a href="{{ url_for('admin_blood_requests') }}" class="btn btn-outline-danger w-100">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-tint fa-lg"></i>
+                </div>
+                <h5 class="card-title">Donations</h5>
+                <p class="card-text small">Manage and verify blood donations</p>
+                <a href="{{ url_for('admin_donations') }}" class="btn btn-outline-danger w-100">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-user-check fa-lg"></i>
+                </div>
+                <h5 class="card-title">Verifications</h5>
+                <p class="card-text small">Review donor verification requests</p>
+                <a href="{{ url_for('admin_verifications') }}" class="btn btn-outline-danger w-100">Review</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="icon-box rounded-circle bg-danger text-white p-3 mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-users fa-lg"></i>
+                </div>
+                <h5 class="card-title">Users</h5>
+                <p class="card-text small">Manage all system users</p>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-outline-danger w-100">Manage</a>
+            </div>
+        </div>
     </div>
     <div class="col-md-3 mb-3">
         <div class="card h-100 text-center">

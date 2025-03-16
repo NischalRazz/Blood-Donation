@@ -37,7 +37,7 @@ os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'address_proofs'), exist_o
 
 # Import these after initializing app
 from extensions import db
-from models import PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
+from models import AdminActionLog, PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
 from utils import admin_required, calculate_blood_compatibility, donor_required, log_admin_action, receiver_required, format_verification_status, calculate_next_donation_date, validate_password_complexity
 
 # Initialize SQLAlchemy
@@ -1190,9 +1190,598 @@ def create_notification_handlers():
         'matching_donors': notify_matching_donors,
         'admin_blood_request': notify_admins_blood_request
     }
+# Routes for admin blood requests management
+@app.route('/admin/blood-requests')
+@login_required
+@admin_required
+def admin_blood_requests():
+    """Admin page to manage all blood requests"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # Get filter parameters
+    blood_type_filter = request.args.get('blood_type', 'all')
+    urgency_filter = request.args.get('urgency', 'all')
+    status_filter = request.args.get('status', 'all')
+    
+    # Build query based on filters
+    query = BloodRequest.query
+    
+    if blood_type_filter != 'all':
+        query = query.filter_by(blood_type=blood_type_filter)
+    
+    if urgency_filter != 'all':
+        query = query.filter_by(urgency=urgency_filter)
+    
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+    
+    # Order by creation date (newest first)
+    query = query.order_by(BloodRequest.created_at.desc())
+    
+    # Paginate results
+    blood_requests = query.paginate(page=page, per_page=per_page)
+    
+    return render_template('admin_blood_requests.html', 
+                          blood_requests=blood_requests,
+                          blood_type_filter=blood_type_filter,
+                          urgency_filter=urgency_filter,
+                          status_filter=status_filter)
 
+@app.route('/admin/donations')
+@login_required
+@admin_required
+def admin_donations():
+    """Admin page to manage all donations"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # Get filter parameters
+    blood_type_filter = request.args.get('blood_type', 'all')
+    status_filter = request.args.get('status', 'all')
+    time_filter = request.args.get('time_range', 'all')
+    
+    # Build query based on filters
+    query = Donation.query
+    
+    if blood_type_filter != 'all':
+        query = query.filter_by(blood_type=blood_type_filter)
+    
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+    
+    # Apply time filter
+    now = datetime.utcnow()
+    if time_filter == 'today':
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(Donation.donation_date >= today_start)
+    elif time_filter == 'week':
+        week_start = now - timedelta(days=now.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(Donation.donation_date >= week_start)
+    elif time_filter == 'month':
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(Donation.donation_date >= month_start)
+    
+    # Order by donation date (newest first)
+    query = query.order_by(Donation.donation_date.desc())
+    
+    # Paginate results
+    donations = query.paginate(page=page, per_page=per_page)
+    
+    # Calculate blood type statistics for display in the summary
+    blood_type_stats = {}
+    for blood_type in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']:
+        # Get total units for this blood type (only count completed donations)
+        total_units = db.session.query(db.func.sum(Donation.units)).filter(
+            Donation.blood_type == blood_type,
+            Donation.status == 'completed'
+        ).scalar() or 0
+        
+        # Get the last donation date for this blood type
+        last_donation = Donation.query.filter_by(
+            blood_type=blood_type,
+            status='completed'
+        ).order_by(Donation.donation_date.desc()).first()
+        
+        blood_type_stats[blood_type] = {
+            'total_units': total_units,
+            'last_donation': last_donation.donation_date if last_donation else None
+        }
+    
+    return render_template('admin_donations.html', 
+                          donations=donations,
+                          blood_type_filter=blood_type_filter,
+                          status_filter=status_filter,
+                          time_filter=time_filter,
+                          blood_type_stats=blood_type_stats,
+                          get_blood_stock_status=get_blood_stock_status)
+
+@app.route('/admin/logs')
+@login_required
+@admin_required
+def admin_logs():
+    """Admin page to view action logs"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    # Get filter parameters
+    action_type_filter = request.args.get('action_type', 'all')
+    admin_filter = request.args.get('admin_id', 'all')
+    time_filter = request.args.get('time_range', 'all')
+    
+    # Build query based on filters
+    query = AdminActionLog.query
+    
+    if action_type_filter != 'all':
+        query = query.filter(AdminActionLog.action_type.like(f'{action_type_filter}%'))
+    
+    if admin_filter != 'all':
+        query = query.filter_by(admin_id=int(admin_filter))
+    
+    # Apply time filter
+    now = datetime.utcnow()
+    if time_filter == 'today':
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(AdminActionLog.timestamp >= today_start)
+    elif time_filter == 'week':
+        week_start = now - timedelta(days=now.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(AdminActionLog.timestamp >= week_start)
+    elif time_filter == 'month':
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(AdminActionLog.timestamp >= month_start)
+    
+    # Order by timestamp (newest first)
+    query = query.order_by(AdminActionLog.timestamp.desc())
+    
+    # Paginate results
+    admin_logs = query.paginate(page=page, per_page=per_page)
+    
+    # Get all admin users for filter dropdown
+    admins = User.query.filter_by(role='admin').all()
+    
+    # Define a template filter to prettify JSON
+    @app.template_filter('prettify_json')
+    def prettify_json(json_string):
+        """Format JSON string for display"""
+        try:
+            if json_string:
+                data = json.loads(json_string)
+                return json.dumps(data, indent=2)
+        except:
+            pass
+        return json_string
+    
+    return render_template('admin_logs.html', 
+                          admin_logs=admin_logs,
+                          action_type_filter=action_type_filter,
+                          admin_filter=admin_filter,
+                          time_filter=time_filter,
+                          admins=admins)
+
+@app.route('/admin/logs/admin/<int:admin_id>')
+@login_required
+@admin_required
+def admin_logs_by_admin(admin_id):
+    """Filter logs by admin user"""
+    return redirect(url_for('admin_logs', admin_id=admin_id))
+
+@app.route('/admin/logs/type/<action_type>')
+@login_required
+@admin_required
+def admin_logs_by_type(action_type):
+    """Filter logs by action type"""
+    return redirect(url_for('admin_logs', action_type=action_type))
+
+@app.route('/view-blood-request/<int:request_id>')
+@login_required
+def view_blood_request(request_id):
+    """View details of a blood request"""
+    blood_request = BloodRequest.query.get_or_404(request_id)
+    
+    # Authorization check - only admins, the requester, or compatible donors can view
+    if current_user.role != 'admin' and current_user.id != blood_request.requester_id:
+        if current_user.role != 'donor' or current_user.blood_type not in calculate_blood_compatibility(blood_request.blood_type):
+            flash('You do not have permission to view this request', 'danger')
+            return redirect(url_for('blood_requests'))
+    
+    # Get requester stats
+    requester_stats = {
+        'total_requests': BloodRequest.query.filter_by(requester_id=blood_request.requester_id).count()
+    }
+    
+    # For admins and receivers, show compatible donors
+    compatible_donors = []
+    if current_user.role in ['admin', 'receiver']:
+        compatible_donors = User.query.filter_by(
+            role='donor',
+            is_verified=True,
+            blood_type=blood_request.blood_type
+        ).all()
+        
+        # Add a flag to check if donor is eligible to donate now
+        for donor in compatible_donors:
+            donor.is_eligible_to_donate = (not donor.next_eligible_date or 
+                                          donor.next_eligible_date <= datetime.utcnow())
+    
+    # Calculate blood availability stats
+    blood_availability = calculate_blood_availability(blood_request.blood_type, blood_request.units_needed)
+    
+    return render_template('view_blood_request.html', 
+                          request=blood_request,
+                          requester_stats=requester_stats,
+                          compatible_donors=compatible_donors,
+                          blood_availability=blood_availability,
+                          now=datetime.utcnow())
+
+@app.route('/view-donation/<int:donation_id>')
+@login_required
+def view_donation(donation_id):
+    """View details of a donation"""
+    donation = Donation.query.get_or_404(donation_id)
+    
+    # Authorization check - only admins or the donor can view
+    if current_user.role != 'admin' and current_user.id != donation.donor_id:
+        flash('You do not have permission to view this donation', 'danger')
+        return redirect(url_for('donor_dashboard'))
+    
+    # Get donor stats
+    donor_stats = {
+        'total_donations': Donation.query.filter_by(donor_id=donation.donor_id, status='completed').count(),
+        'last_donation': Donation.query.filter_by(
+            donor_id=donation.donor_id,
+            status='completed'
+        ).order_by(Donation.donation_date.desc()).first().donation_date if 
+            Donation.query.filter_by(donor_id=donation.donor_id, status='completed').count() > 0 else None
+    }
+    
+    return render_template('view_donation.html', 
+                          donation=donation,
+                          donor_stats=donor_stats)
+
+@app.route('/update-blood-request-status/<int:request_id>/<status>')
+@login_required
+@admin_required
+def update_blood_request_status(request_id, status):
+    """Update the status of a blood request"""
+    if status not in ['pending', 'processing', 'fulfilled', 'cancelled']:
+        flash('Invalid status', 'danger')
+        return redirect(url_for('admin_blood_requests'))
+    
+    blood_request = BloodRequest.query.get_or_404(request_id)
+    
+    try:
+        old_status = blood_request.status
+        blood_request.status = status
+        
+        # Add timestamps based on status
+        now = datetime.utcnow()
+        if status == 'processing':
+            blood_request.processing_date = now
+        elif status == 'fulfilled':
+            blood_request.fulfilled_date = now
+            blood_request.fulfilled_by = f"{current_user.first_name} {current_user.last_name}"
+        elif status == 'cancelled':
+            blood_request.cancelled_date = now
+        
+        # Log the admin action
+        log_admin_action(
+            admin_user=current_user,
+            action_type=f'blood_request_{status}',
+            target_user=blood_request.requester,
+            details={
+                'request_id': blood_request.id,
+                'old_status': old_status,
+                'new_status': status,
+                'blood_type': blood_request.blood_type,
+                'units': blood_request.units_needed
+            }
+        )
+        
+        # Notify the requester about the status change
+        notification_handlers['request_update'](
+            blood_request.requester_id,
+            blood_request.id,
+            status
+        )
+        
+        db.session.commit()
+        flash(f'Blood request status updated to {status}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error updating blood request status: {str(e)}")
+        flash('An error occurred while updating status', 'danger')
+    
+    return redirect(url_for('view_blood_request', request_id=request_id))
+
+@app.route('/update-donation-status/<int:donation_id>/<status>')
+@login_required
+@admin_required
+def update_donation_status(donation_id, status):
+    """Update the status of a donation"""
+    if status not in ['pending', 'completed', 'cancelled']:
+        flash('Invalid status', 'danger')
+        return redirect(url_for('admin_donations'))
+    
+    donation = Donation.query.get_or_404(donation_id)
+    
+    try:
+        old_status = donation.status
+        donation.status = status
+        
+        # Add timestamps based on status
+        now = datetime.utcnow()
+        if status == 'completed':
+            donation.verification_date = now
+            donation.verified_by = f"{current_user.first_name} {current_user.last_name}"
+            
+            # Update donor's last donation date and next eligible date
+            donor = donation.donor
+            donor.last_donation_date = donation.donation_date
+            donor.next_eligible_date = calculate_next_donation_date(donation.donation_date)
+        
+        # Log the admin action
+        log_admin_action(
+            admin_user=current_user,
+            action_type=f'donation_{status}',
+            target_user=donation.donor,
+            details={
+                'donation_id': donation.id,
+                'old_status': old_status,
+                'new_status': status,
+                'blood_type': donation.blood_type,
+                'units': donation.units
+            }
+        )
+        
+        # Notify the donor about the status change
+        notification_handlers['donation_result'](
+            donation.donor_id,
+            donation.id,
+            status
+        )
+        
+        db.session.commit()
+        flash(f'Donation status updated to {status}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error updating donation status: {str(e)}")
+        flash('An error occurred while updating status', 'danger')
+    
+    return redirect(url_for('view_donation', donation_id=donation_id))
+
+@app.route('/delete-blood-request/<int:request_id>')
+@login_required
+@admin_required
+def delete_blood_request(request_id):
+    """Delete a blood request"""
+    blood_request = BloodRequest.query.get_or_404(request_id)
+    
+    try:
+        requester = blood_request.requester
+        
+        # Log the admin action
+        log_admin_action(
+            admin_user=current_user,
+            action_type='blood_request_delete',
+            target_user=requester,
+            details={
+                'request_id': blood_request.id,
+                'blood_type': blood_request.blood_type,
+                'units': blood_request.units_needed,
+                'status': blood_request.status
+            }
+        )
+        
+        # Delete the request
+        db.session.delete(blood_request)
+        db.session.commit()
+        
+        flash('Blood request deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting blood request: {str(e)}")
+        flash('An error occurred while deleting the request', 'danger')
+    
+    return redirect(url_for('admin_blood_requests'))
+
+@app.route('/delete-donation/<int:donation_id>')
+@login_required
+@admin_required
+def delete_donation(donation_id):
+    """Delete a donation"""
+    donation = Donation.query.get_or_404(donation_id)
+    
+    try:
+        donor = donation.donor
+        
+        # Log the admin action
+        log_admin_action(
+            admin_user=current_user,
+            action_type='donation_delete',
+            target_user=donor,
+            details={
+                'donation_id': donation.id,
+                'blood_type': donation.blood_type,
+                'units': donation.units,
+                'status': donation.status
+            }
+        )
+        
+        # Delete the donation
+        db.session.delete(donation)
+        db.session.commit()
+        
+        flash('Donation deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting donation: {str(e)}")
+        flash('An error occurred while deleting the donation', 'danger')
+    
+    return redirect(url_for('admin_donations'))
+
+@app.route('/admin/view-user/<int:user_id>')
+@login_required
+@admin_required
+def admin_view_user(user_id):
+    """View user details"""
+    user = User.query.get_or_404(user_id)
+    
+    # Get user statistics based on role
+    user_stats = {}
+    
+    if user.role == 'donor':
+        user_stats['total_donations'] = Donation.query.filter_by(donor_id=user.id, status='completed').count()
+        user_stats['total_units'] = db.session.query(db.func.sum(Donation.units)).filter(
+            Donation.donor_id == user.id,
+            Donation.status == 'completed'
+        ).scalar() or 0
+        
+        user_stats['last_donation'] = Donation.query.filter_by(
+            donor_id=user.id,
+            status='completed'
+        ).order_by(Donation.donation_date.desc()).first()
+        
+    elif user.role == 'receiver':
+        user_stats['total_requests'] = BloodRequest.query.filter_by(requester_id=user.id).count()
+        user_stats['pending_requests'] = BloodRequest.query.filter_by(
+            requester_id=user.id,
+            status='pending'
+        ).count()
+        user_stats['fulfilled_requests'] = BloodRequest.query.filter_by(
+            requester_id=user.id,
+            status='fulfilled'
+        ).count()
+    
+    # Log this admin action
+    log_admin_action(
+        admin_user=current_user,
+        action_type='user_view',
+        target_user=user,
+        details=None
+    )
+    
+    return render_template('admin_view_user.html', user=user, user_stats=user_stats)
+
+@app.route('/generate-donation-certificate/<int:donation_id>')
+@login_required
+def generate_donation_certificate(donation_id):
+    """Generate a certificate for a donation"""
+    donation = Donation.query.get_or_404(donation_id)
+    
+    # Authorization check - only admins or the donor can generate certificate
+    if current_user.role != 'admin' and current_user.id != donation.donor_id:
+        flash('You do not have permission to generate this certificate', 'danger')
+        return redirect(url_for('donor_dashboard'))
+    
+    # Only allow certificate generation for completed donations
+    if donation.status != 'completed':
+        flash('Certificates can only be generated for completed donations', 'warning')
+        return redirect(url_for('view_donation', donation_id=donation_id))
+    
+    # In a real application, this would generate a PDF certificate
+    # For now, we'll just create a simple HTML certificate
+    
+    return render_template('donation_certificate.html', donation=donation)
+
+# Helper functions
+
+def get_blood_stock_status(total_units):
+    """Determine blood stock status based on total units"""
+    if total_units <= 10:
+        return {'text': 'Critical', 'class': 'danger'}
+    elif total_units <= 30:
+        return {'text': 'Low', 'class': 'warning'}
+    elif total_units <= 60:
+        return {'text': 'Adequate', 'class': 'info'}
+    else:
+        return {'text': 'Good', 'class': 'success'}
+
+def calculate_blood_availability(blood_type, units_needed):
+    """Calculate blood availability information for display"""
+    # Get total units available for this blood type
+    available_units = db.session.query(db.func.sum(Donation.units)).filter(
+        Donation.blood_type == blood_type,
+        Donation.status == 'completed'
+    ).scalar() or 0
+    
+    # Calculate percentage available (max 100%)
+    percentage = min(100, int((available_units / max(1, units_needed)) * 100))
+    
+    # Determine status message and class
+    if percentage < 30:
+        status_class = 'danger'
+        message = f"Critical shortage! Only {available_units} units available of {units_needed} needed."
+        icon = 'fa-exclamation-circle'
+    elif percentage < 70:
+        status_class = 'warning'
+        message = f"Limited availability. {available_units} units available of {units_needed} needed."
+        icon = 'fa-exclamation-triangle'
+    else:
+        status_class = 'success'
+        message = f"Sufficient stock available. {available_units} units available."
+        icon = 'fa-check-circle'
+    
+    return {
+        'available_units': available_units,
+        'needed_units': units_needed,
+        'percentage': percentage,
+        'status_class': status_class,
+        'message': message,
+        'icon': icon
+    }
 # Initialize notification handlers
 notification_handlers = create_notification_handlers()
+def notify_request_update(requester_id, request_id, status):
+    """Notify requester about blood request status updates"""
+    if status == 'processing':
+        title = "Request Processing"
+        message = "Your blood request is now being processed. We're finding donors for you."
+        notification_type = 'info'
+    elif status == 'fulfilled':
+        title = "Request Fulfilled"
+        message = "Good news! Your blood request has been fulfilled."
+        notification_type = 'success'
+    elif status == 'cancelled':
+        title = "Request Cancelled"
+        message = "Your blood request has been cancelled."
+        notification_type = 'danger'
+    else:
+        return None
+    
+    return Notification.create_notification(
+        user_id=requester_id,
+        title=title,
+        message=message,
+        type=notification_type,
+        link=url_for('view_blood_request', request_id=request_id)
+    )
+
+def notify_donation_result(donor_id, donation_id, status):
+    """Notify donor about donation status updates"""
+    if status == 'completed':
+        title = "Donation Verified"
+        message = "Your blood donation has been verified. Thank you for saving lives!"
+        notification_type = 'success'
+    elif status == 'cancelled':
+        title = "Donation Cancelled"
+        message = "Your blood donation record has been cancelled."
+        notification_type = 'warning'
+    else:
+        return None
+    
+    return Notification.create_notification(
+        user_id=donor_id,
+        title=title,
+        message=message,
+        type=notification_type,
+        link=url_for('view_donation', donation_id=donation_id)
+    )
+notification_handlers.update({
+    'request_update': notify_request_update,
+    'donation_result': notify_donation_result
+})
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

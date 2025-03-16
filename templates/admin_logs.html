@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-logs-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-danger mb-0">Admin Action Logs</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select class="form-select" name="action_type" onchange="this.form.submit()">
+                        <option value="all" {% if action_type_filter == 'all' %}selected{% endif %}>All Action Types</option>
+                        <option value="user_management" {% if action_type_filter == 'user_management' %}selected{% endif %}>User Management</option>
+                        <option value="verification" {% if action_type_filter == 'verification' %}selected{% endif %}>Verification Actions</option>
+                        <option value="blood_request" {% if action_type_filter == 'blood_request' %}selected{% endif %}>Blood Request Actions</option>
+                        <option value="donation" {% if action_type_filter == 'donation' %}selected{% endif %}>Donation Actions</option>
+                        <option value="password_reset" {% if action_type_filter == 'password_reset' %}selected{% endif %}>Password Resets</option>
+                        <option value="content" {% if action_type_filter == 'content' %}selected{% endif %}>Content Management</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="admin_id" onchange="this.form.submit()">
+                        <option value="all" {% if admin_filter == 'all' %}selected{% endif %}>All Admins</option>
+                        {% for admin in admins %}
+                            <option value="{{ admin.id }}" {% if admin_filter|int == admin.id %}selected{% endif %}>
+                                {{ admin.first_name }} {{ admin.last_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="time_range" onchange="this.form.submit()">
+                        <option value="all" {% if time_filter == 'all' %}selected{% endif %}>All Time</option>
+                        <option value="today" {% if time_filter == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if time_filter == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if time_filter == 'month' %}selected{% endif %}>This Month</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <a href="{{ url_for('admin_logs') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Logs Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Admin</th>
+                            <th>Action Type</th>
+                            <th>Target User</th>
+                            <th>Details</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if admin_logs.items %}
+                            {% for log in admin_logs.items %}
+                                <tr>
+                                    <td>#{{ log.id }}</td>
+                                    <td>{{ log.timestamp.strftime('%d %b %Y, %H:%M:%S') }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-danger text-white me-2">
+                                                {{ log.admin.first_name[0] }}{{ log.admin.last_name[0] }}
+                                            </div>
+                                            <div>
+                                                {{ log.admin.first_name }} {{ log.admin.last_name }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% set action_types = {
+                                            'password_reset': {'label': 'Password Reset', 'class': 'danger'},
+                                            'user_management': {'label': 'User Management', 'class': 'primary'},
+                                            'verification': {'label': 'Verification', 'class': 'success'},
+                                            'blood_request': {'label': 'Blood Request', 'class': 'info'},
+                                            'donation': {'label': 'Donation', 'class': 'warning'},
+                                            'content': {'label': 'Content', 'class': 'secondary'}
+                                        } %}
+                                        
+                                        {% set action_info = action_types.get(log.action_type.split('_')[0], {'label': log.action_type.replace('_', ' ').title(), 'class': 'secondary'}) %}
+                                        
+                                        <span class="badge bg-{{ action_info.class }}">
+                                            {{ action_info.label }}
+                                        </span>
+                                        <span class="d-block small text-muted mt-1">
+                                            {{ log.action_type.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if log.target_user %}
+                                            <a href="{{ url_for('admin_view_user', user_id=log.target_user.id) }}" class="text-decoration-none">
+                                                {{ log.target_user.first_name }} {{ log.target_user.last_name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#logDetailsModal{{ log.id }}">
+                                            <i class="fas fa-eye me-1"></i> View Details
+                                        </button>
+                                        
+                                        <!-- Log Details Modal -->
+                                        <div class="modal fade" id="logDetailsModal{{ log.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Log Details #{{ log.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h6 class="mb-3">Action Information</h6>
+                                                        <div class="detail-row">
+                                                            <div class="detail-label">Type</div>
+                                                            <div class="detail-value">{{ log.action_type.replace('_', ' ').title() }}</div>
+                                                        </div>
+                                                        <div class="detail-row">
+                                                            <div class="detail-label">Timestamp</div>
+                                                            <div class="detail-value">{{ log.timestamp.strftime('%d %b %Y, %H:%M:%S') }}</div>
+                                                        </div>
+                                                        <div class="detail-row">
+                                                            <div class="detail-label">Performed By</div>
+                                                            <div class="detail-value">{{ log.admin.first_name }} {{ log.admin.last_name }}</div>
+                                                        </div>
+                                                        
+                                                        {% if log.target_user %}
+                                                            <h6 class="mb-3 mt-4">Target User</h6>
+                                                            <div class="detail-row">
+                                                                <div class="detail-label">Name</div>
+                                                                <div class="detail-value">{{ log.target_user.first_name }} {{ log.target_user.last_name }}</div>
+                                                            </div>
+                                                            <div class="detail-row">
+                                                                <div class="detail-label">Email</div>
+                                                                <div class="detail-value">{{ log.target_user.email }}</div>
+                                                            </div>
+                                                            <div class="detail-row">
+                                                                <div class="detail-label">Role</div>
+                                                                <div class="detail-value">{{ log.target_user.role.capitalize() }}</div>
+                                                            </div>
+                                                        {% endif %}
+                                                        
+                                                        {% if log.details %}
+                                                            <h6 class="mb-3 mt-4">Detailed Information</h6>
+                                                            <div class="bg-light p-3 rounded">
+                                                                <pre class="mb-0">{{ log.details|prettify_json }}</pre>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                {% if log.target_user %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('admin_view_user', user_id=log.target_user.id) }}">
+                                                            <i class="fas fa-user me-2"></i> View User
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('admin_logs_by_admin', admin_id=log.admin.id) }}">
+                                                        <i class="fas fa-filter me-2"></i> Filter by Admin
+                                                    </a>
+                                                </li>
+                                                
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('admin_logs_by_type', action_type=log.action_type) }}">
+                                                        <i class="fas fa-filter me-2"></i> Filter by Action Type
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-clipboard-list fa-2x mb-3"></i>
+                                        <p>No admin action logs found matching your criteria.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if admin_logs.pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if admin_logs.page == 1 else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_logs', page=admin_logs.prev_num, action_type=action_type_filter, admin_id=admin_filter, time_range=time_filter) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% for page_num in admin_logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == admin_logs.page else '' }}">
+                            <a class="page-link" href="{{ url_for('admin_logs', page=page_num, action_type=action_type_filter, admin_id=admin_filter, time_range=time_filter) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {{ 'disabled' if admin_logs.page == admin_logs.pages else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_logs', page=admin_logs.next_num, action_type=action_type_filter, admin_id=admin_filter, time_range=time_filter) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
+<style>
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .detail-row {
+        display: flex;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 8px 0;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        width: 40%;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .detail-value {
+        width: 60%;
+        word-break: break-word;
+    }
+    
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+{% endblock %}

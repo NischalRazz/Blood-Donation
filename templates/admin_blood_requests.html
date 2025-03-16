@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-blood-requests-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-danger mb-0">Manage Blood Requests</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select class="form-select" name="blood_type" onchange="this.form.submit()">
+                        <option value="all" {% if blood_type_filter == 'all' %}selected{% endif %}>All Blood Types</option>
+                        <option value="A+" {% if blood_type_filter == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if blood_type_filter == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if blood_type_filter == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if blood_type_filter == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if blood_type_filter == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if blood_type_filter == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if blood_type_filter == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if blood_type_filter == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="urgency" onchange="this.form.submit()">
+                        <option value="all" {% if urgency_filter == 'all' %}selected{% endif %}>All Urgency Levels</option>
+                        <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
+                        <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                        <option value="emergency" {% if urgency_filter == 'emergency' %}selected{% endif %}>Emergency</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="status" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Processing</option>
+                        <option value="fulfilled" {% if status_filter == 'fulfilled' %}selected{% endif %}>Fulfilled</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <a href="{{ url_for('admin_blood_requests') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Blood Requests Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Requester</th>
+                            <th>Blood Type</th>
+                            <th>Units</th>
+                            <th>Urgency</th>
+                            <th>Hospital</th>
+                            <th>Required By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if blood_requests.items %}
+                            {% for request in blood_requests.items %}
+                                <tr class="{% if request.urgency == 'emergency' and request.status == 'pending' %}table-danger{% elif request.urgency == 'urgent' and request.status == 'pending' %}table-warning{% endif %}">
+                                    <td>#{{ request.id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-success text-white me-2">
+                                                {{ request.requester.first_name[0] }}{{ request.requester.last_name[0] }}
+                                            </div>
+                                            <div>
+                                                {{ request.requester.first_name }} {{ request.requester.last_name }}
+                                                <div class="small text-muted">{{ request.requester.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-danger">{{ request.blood_type }}</span></td>
+                                    <td>{{ request.units_needed }}</td>
+                                    <td>
+                                        {% if request.urgency == 'emergency' %}
+                                            <span class="badge bg-danger">Emergency</span>
+                                        {% elif request.urgency == 'urgent' %}
+                                            <span class="badge bg-warning">Urgent</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Normal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.hospital }}</td>
+                                    <td>{{ request.required_by.strftime('%d %b %Y') if request.required_by else 'Not specified' }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif request.status == 'processing' %}
+                                            <span class="badge bg-info">Processing</span>
+                                        {% elif request.status == 'fulfilled' %}
+                                            <span class="badge bg-success">Fulfilled</span>
+                                        {% elif request.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('view_blood_request', request_id=request.id) }}">
+                                                        <i class="fas fa-eye me-2"></i> View Details
+                                                    </a>
+                                                </li>
+                                                
+                                                {% if request.status == 'pending' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('update_blood_request_status', request_id=request.id, status='processing') }}">
+                                                            <i class="fas fa-hourglass-start me-2"></i> Mark Processing
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                {% if request.status in ['pending', 'processing'] %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('update_blood_request_status', request_id=request.id, status='fulfilled') }}">
+                                                            <i class="fas fa-check me-2"></i> Mark Fulfilled
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('update_blood_request_status', request_id=request.id, status='cancelled') }}">
+                                                            <i class="fas fa-times me-2"></i> Cancel Request
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                {% if request.status == 'fulfilled' %}
+                                                    <li>
+                                                        <a class="dropdown-item text-success" href="#">
+                                                            <i class="fas fa-print me-2"></i> Print Receipt
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                <li><hr class="dropdown-divider"></li>
+                                                
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRequestModal{{ request.id }}">
+                                                        <i class="fas fa-trash-alt me-2"></i> Delete Request
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteRequestModal{{ request.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Confirm Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to delete blood request <strong>#{{ request.id }}</strong>?</p>
+                                                        <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <a href="{{ url_for('delete_blood_request', request_id=request.id) }}" class="btn btn-danger">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-hands-helping fa-2x mb-3"></i>
+                                        <p>No blood requests found matching your criteria.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if blood_requests.pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if blood_requests.page == 1 else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_blood_requests', page=blood_requests.prev_num, blood_type=blood_type_filter, urgency=urgency_filter, status=status_filter) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% for page_num in blood_requests.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == blood_requests.page else '' }}">
+                            <a class="page-link" href="{{ url_for('admin_blood_requests', page=page_num, blood_type=blood_type_filter, urgency=urgency_filter, status=status_filter) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {{ 'disabled' if blood_requests.page == blood_requests.pages else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_blood_requests', page=blood_requests.next_num, blood_type=blood_type_filter, urgency=urgency_filter, status=status_filter) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
+<style>
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

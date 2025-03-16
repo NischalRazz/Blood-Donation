@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="donation-details-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-danger mb-0">Donation Details <span class="text-muted">#{{ donation.id }}</span></h1>
+        <div>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin_donations') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Donations
+                </a>
+            {% elif current_user.role == 'donor' %}
+                <a href="{{ url_for('donor_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <!-- Donor Info Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Donor Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle bg-primary text-white mx-auto mb-3">
+                            {{ donation.donor.first_name[0] }}{{ donation.donor.last_name[0] }}
+                        </div>
+                        <h5>{{ donation.donor.first_name }} {{ donation.donor.last_name }}</h5>
+                        <p class="text-muted mb-1">{{ donation.donor.email }}</p>
+                        {% if donation.donor.phone %}
+                            <p class="text-muted mb-0"><i class="fas fa-phone me-1"></i> {{ donation.donor.phone }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="donor-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Blood Type</div>
+                            <div class="detail-value">
+                                <span class="badge bg-danger">{{ donation.donor.blood_type }}</span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Donor ID</div>
+                            <div class="detail-value">#{{ donation.donor.id }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Verification Status</div>
+                            <div class="detail-value">
+                                {% if donation.donor.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Not Verified</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Total Donations</div>
+                            <div class="detail-value">{{ donor_stats.total_donations }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Last Donation</div>
+                            <div class="detail-value">
+                                {% if donor_stats.last_donation %}
+                                    {{ donor_stats.last_donation.strftime('%d %b %Y') }}
+                                {% else %}
+                                    None
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Next Eligible Date</div>
+                            <div class="detail-value">
+                                {% if donation.donor.next_eligible_date %}
+                                    {{ donation.donor.next_eligible_date.strftime('%d %b %Y') }}
+                                {% else %}
+                                    Not set
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if current_user.role == 'admin' %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('admin_view_user', user_id=donation.donor.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-user me-1"></i> View Donor Profile
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Donation Status Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Donation Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if donation.status == 'pending' %}
+                            <div class="status-badge bg-warning">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                            <h5 class="mt-3">Pending Verification</h5>
+                            <p class="text-muted">This donation is awaiting verification</p>
+                        {% elif donation.status == 'completed' %}
+                            <div class="status-badge bg-success">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <h5 class="mt-3">Donation Completed</h5>
+                            <p class="text-muted">This donation has been verified and completed</p>
+                        {% elif donation.status == 'cancelled' %}
+                            <div class="status-badge bg-secondary">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <h5 class="mt-3">Donation Cancelled</h5>
+                            <p class="text-muted">This donation has been cancelled</p>
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.role == 'admin' and donation.status == 'pending' %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('update_donation_status', donation_id=donation.id, status='completed') }}" class="btn btn-success">
+                                <i class="fas fa-check me-1"></i> Confirm Donation
+                            </a>
+                            <a href="{{ url_for('update_donation_status', donation_id=donation.id, status='cancelled') }}" class="btn btn-outline-danger">
+                                <i class="fas fa-times me-1"></i> Cancel Donation
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if current_user.role == 'admin' and donation.status == 'completed' %}
+                        <div class="d-grid mt-3">
+                            <a href="{{ url_for('generate_donation_certificate', donation_id=donation.id) }}" class="btn btn-outline-primary">
+                                <i class="fas fa-certificate me-1"></i> Generate Certificate
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Donation Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Donation Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">Basic Information</h6>
+                            <div class="detail-row">
+                                <div class="detail-label">Donation ID</div>
+                                <div class="detail-value">#{{ donation.id }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Blood Type</div>
+                                <div class="detail-value">
+                                    <span class="badge bg-danger">{{ donation.blood_type }}</span>
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Units Donated</div>
+                                <div class="detail-value">{{ donation.units }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Donation Date</div>
+                                <div class="detail-value">{{ donation.donation_date.strftime('%d %b %Y, %H:%M') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">Location Information</h6>
+                            <div class="detail-row">
+                                <div class="detail-label">Donation Center</div>
+                                <div class="detail-value">{{ donation.center }}</div>
+                            </div>
+                            
+                            {% if donation.status == 'completed' %}
+                                <div class="detail-row">
+                                    <div class="detail-label">Verified By</div>
+                                    <div class="detail-value">
+                                        {% if donation.verified_by %}
+                                            {{ donation.verified_by }}
+                                        {% else %}
+                                            System
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Verification Date</div>
+                                    <div class="detail-value">
+                                        {% if donation.verification_date %}
+                                            {{ donation.verification_date.strftime('%d %b %Y, %H:%M') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if donation.notes %}
+                        <div class="mb-4">
+                            <h6 class="text-danger mb-3">Notes</h6>
+                            <div class="p-3 bg-light rounded">
+                                {{ donation.notes }}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Status Timeline -->
+                    <h6 class="text-danger mb-3">Donation Timeline</h6>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">Donation Recorded</h6>
+                                <p class="small text-muted mb-0">{{ donation.donation_date.strftime('%d %b %Y, %H:%M') }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if donation.status in ['completed', 'cancelled'] %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-{{ 'success' if donation.status == 'completed' else 'secondary' }}"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-0">
+                                        {% if donation.status == 'completed' %}
+                                            Donation Verified and Completed
+                                        {% else %}
+                                            Donation Cancelled
+                                        {% endif %}
+                                    </h6>
+                                    <p class="small text-muted mb-0">
+                                        {% if donation.verification_date %}
+                                            {{ donation.verification_date.strftime('%d %b %Y, %H:%M') }}
+                                        {% else %}
+                                            Date not recorded
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="timeline-item pending">
+                                <div class="timeline-marker bg-light border border-warning"></div>
+                                <div class="timeline-content text-muted">
+                                    <h6 class="mb-0">Awaiting Verification</h6>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blood Testing or Other Details (if applicable) -->
+            {% if donation.status == 'completed' %}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Blood Testing Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            This donation has passed all blood quality and safety tests.
+                        </div>
+                        
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Test</th>
+                                    <th>Result</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Blood Group Verification</td>
+                                    <td>{{ donation.blood_type }}</td>
+                                    <td><span class="badge bg-success">Confirmed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Infectious Disease Screening</td>
+                                    <td>Negative</td>
+                                    <td><span class="badge bg-success">Passed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Hemoglobin Level</td>
+                                    <td>13.5 g/dL</td>
+                                    <td><span class="badge bg-success">Normal</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Blood Quality Assessment</td>
+                                    <td>High Quality</td>
+                                    <td><span class="badge bg-success">Passed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <p class="mt-3 mb-0 text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Blood testing results are automatically generated for demonstration purposes.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .donor-details .detail-row {
+        display: flex;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 8px 0;
+    }
+    
+    .donor-details .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .donor-details .detail-label {
+        width: 40%;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .donor-details .detail-value {
+        width: 60%;
+    }
+    
+    .status-badge {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: white;
+        font-size: 24px;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 5px;
+        bottom: 5px;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    
+    .timeline-content {
+        padding: 0 0 0 15px;
+    }
+    
+    .timeline-item.pending .timeline-content {
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-donations-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-danger mb-0">Manage Donations</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select class="form-select" name="blood_type" onchange="this.form.submit()">
+                        <option value="all" {% if blood_type_filter == 'all' %}selected{% endif %}>All Blood Types</option>
+                        <option value="A+" {% if blood_type_filter == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if blood_type_filter == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if blood_type_filter == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if blood_type_filter == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if blood_type_filter == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if blood_type_filter == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if blood_type_filter == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if blood_type_filter == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="status" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="time_range" onchange="this.form.submit()">
+                        <option value="all" {% if time_filter == 'all' %}selected{% endif %}>All Time</option>
+                        <option value="today" {% if time_filter == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if time_filter == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if time_filter == 'month' %}selected{% endif %}>This Month</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <a href="{{ url_for('admin_donations') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Blood Donations Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Donor</th>
+                            <th>Blood Type</th>
+                            <th>Units</th>
+                            <th>Donation Center</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if donations.items %}
+                            {% for donation in donations.items %}
+                                <tr class="{% if donation.status == 'pending' %}table-warning{% endif %}">
+                                    <td>#{{ donation.id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary text-white me-2">
+                                                {{ donation.donor.first_name[0] }}{{ donation.donor.last_name[0] }}
+                                            </div>
+                                            <div>
+                                                {{ donation.donor.first_name }} {{ donation.donor.last_name }}
+                                                <div class="small text-muted">{{ donation.donor.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-danger">{{ donation.blood_type }}</span></td>
+                                    <td>{{ donation.units }}</td>
+                                    <td>{{ donation.center }}</td>
+                                    <td>{{ donation.donation_date.strftime('%d %b %Y, %H:%M') }}</td>
+                                    <td>
+                                        {% if donation.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif donation.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif donation.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('view_donation', donation_id=donation.id) }}">
+                                                        <i class="fas fa-eye me-2"></i> View Details
+                                                    </a>
+                                                </li>
+                                                
+                                                {% if donation.status == 'pending' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('update_donation_status', donation_id=donation.id, status='completed') }}">
+                                                            <i class="fas fa-check me-2"></i> Confirm Donation
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('update_donation_status', donation_id=donation.id, status='cancelled') }}">
+                                                            <i class="fas fa-times me-2"></i> Cancel Donation
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                {% if donation.status == 'completed' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('generate_donation_certificate', donation_id=donation.id) }}">
+                                                            <i class="fas fa-certificate me-2"></i> Generate Certificate
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                <li><hr class="dropdown-divider"></li>
+                                                
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteDonationModal{{ donation.id }}">
+                                                        <i class="fas fa-trash-alt me-2"></i> Delete Record
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteDonationModal{{ donation.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Confirm Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to delete donation record <strong>#{{ donation.id }}</strong>?</p>
+                                                        <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <a href="{{ url_for('delete_donation', donation_id=donation.id) }}" class="btn btn-danger">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-tint fa-2x mb-3"></i>
+                                        <p>No donations found matching your criteria.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Donation Summary Card -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Donation Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Blood Type</th>
+                                    <th>Total Units</th>
+                                    <th>Last Donation</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for blood_type in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                                    <tr>
+                                        <td><span class="badge bg-danger">{{ blood_type }}</span></td>
+                                        <td>{{ blood_type_stats.get(blood_type, {}).get('total_units', 0) }}</td>
+                                        <td>{{ blood_type_stats.get(blood_type, {}).get('last_donation', 'Never').strftime('%d %b %Y') if blood_type_stats.get(blood_type, {}).get('last_donation') else 'Never' }}</td>
+                                        <td>
+                                            {% set status = get_blood_stock_status(blood_type_stats.get(blood_type, {}).get('total_units', 0)) %}
+                                            <span class="badge bg-{{ status.class }}">{{ status.text }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Active Donors</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="donorsChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if donations.pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if donations.page == 1 else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_donations', page=donations.prev_num, blood_type=blood_type_filter, status=status_filter, time_range=time_filter) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% for page_num in donations.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == donations.page else '' }}">
+                            <a class="page-link" href="{{ url_for('admin_donations', page=page_num, blood_type=blood_type_filter, status=status_filter, time_range=time_filter) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {{ 'disabled' if donations.page == donations.pages else '' }}">
+                    <a class="page-link" href="{{ url_for('admin_donations', page=donations.next_num, blood_type=blood_type_filter, status=status_filter, time_range=time_filter) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
+<style>
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+</style>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Donors chart
+        const donorsChartCtx = document.getElementById('donorsChart').getContext('2d');
+        
+        // Donation data by month (last 6 months)
+        const months = ['January', 'February', 'March', 'April', 'May', 'June'];
+        const donationCounts = [15, 18, 22, 26, 30, 35];
+        const newDonors = [5, 8, 10, 12, 15, 18];
+        
+        const donorsChart = new Chart(donorsChartCtx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Total Donations',
+                        data: donationCounts,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'New Donors',
+                        data: newDonors,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Donors'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
