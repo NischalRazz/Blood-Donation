@@ -712,8 +712,12 @@ def forgot_password():
         if user:
             token = user.generate_password_reset_token()
             
-            # In production, use the actual host
-            reset_url = request.host_url.rstrip('/') + url_for('reset_password')
+            # Construct absolute URL for password reset
+            if request.is_secure:
+                protocol = 'https'
+            else:
+                protocol = 'http'
+            reset_url = f"{protocol}://{request.host}{url_for('reset_password')}"
             
             if send_password_reset_email(user, token, reset_url):
                 flash('Password reset instructions have been sent to your email.', 'success')
@@ -928,10 +932,8 @@ def send_password_reset_email(user, token, reset_url):
     The BloodBridge Team
     """
     
-    # This is just a placeholder since the actual implementation is in email_utils.py
-    # In practice, you would use something like:
-    # return send_email(user.email, subject, html_content, text_content)
-    return True
+    from email_utils import send_email
+    return send_email(user.email, subject, html_content, text_content)
 
 from datetime import datetime, timedelta
 import humanize
