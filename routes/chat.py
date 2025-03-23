@@ -97,6 +97,7 @@ def get_messages(chat_session_id):
     return jsonify([{
         'id': msg.id,
         'sender_id': msg.sender_id,
+        'sender_name': User.query.get(msg.sender_id).get_full_name(),
         'content': msg.content,
         'attachment_url': msg.attachment_url,
         'is_read': msg.is_read,
@@ -145,6 +146,7 @@ def send_message(chat_session_id):
     return jsonify({
         'id': message.id,
         'sender_id': message.sender_id,
+        'sender_name': current_user.get_full_name(),
         'content': message.content,
         'attachment_url': message.attachment_url,
         'is_read': message.is_read,
