@@ -50,7 +50,7 @@
                         </div>
                         <i class="fas fa-tint fa-3x"></i>
                     </div>
-                    <a href="#" class="btn btn-light btn-sm mt-3">Review</a>
+                    <a href="{{ url_for('admin_donations') }}" class="btn btn-light btn-sm mt-3">Review</a>
                 </div>
             </div>
         </div>
@@ -202,7 +202,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Donations</h5>
-                    <a href="#" class="btn btn-sm btn-outline-danger">View All</a>
+                    <a href="{{ url_for('admin_donations') }}" class="btn btn-sm btn-outline-danger">View All</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">

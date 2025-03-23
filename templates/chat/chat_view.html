@@ -28,6 +28,7 @@
             <!-- Chat Input -->
             <div class="chat-input bg-white rounded-bottom shadow-sm p-3 border">
                 <form id="message-form" class="d-flex align-items-center">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="text" id="message-input" class="form-control me-2" placeholder="Type your message...">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-paper-plane"></i>

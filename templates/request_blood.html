@@ -9,6 +9,7 @@
                 <p class="text-center mb-4">Please fill in the details for your blood requirement.</p>
 
                 <form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Blood Type Required</label>

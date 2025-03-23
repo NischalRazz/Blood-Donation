@@ -13,6 +13,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="col-md-3">
                     <select class="form-select" name="action_type" onchange="this.form.submit()">
                         <option value="all" {% if action_type_filter == 'all' %}selected{% endif %}>All Action Types</option>

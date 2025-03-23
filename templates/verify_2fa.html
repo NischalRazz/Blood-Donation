@@ -9,6 +9,7 @@
                     <h2 class="text-center mb-4">Verify Two-Factor Authentication</h2>
                     
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="token" class="form-label">Enter the 6-digit code from your authenticator app:</label>
                             <input type="text" class="form-control" id="token" name="token" required pattern="[0-9]{6}" maxlength="6">
