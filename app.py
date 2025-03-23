@@ -3,22 +3,26 @@ import json
 import logging
 import re
 from datetime import datetime, timedelta
-from flask import Flask, abort, jsonify, render_template, request, redirect, url_for, flash, session, send_from_directory
+from flask import Flask, abort, jsonify, render_template, request, redirect, url_for, flash, session, send_from_directory, g
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import qrcode
 import io
 import base64
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+from flask_wtf.csrf import CSRFProtect
 
 # Initialize Flask app first
 app = Flask(__name__)
 
 # Then configure the app
 app.secret_key = os.environ.get("SESSION_SECRET", "dev_key_123")
+
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:Ss%40071424@localhost:5432/bloodbridge"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
@@ -30,18 +34,45 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Create upload directory if it doesn't exist
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'id_documents'), exist_ok=True)
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'medical_certificates'), exist_ok=True)
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'address_proofs'), exist_ok=True)
+# Create upload directories if they don't exist and ensure proper permissions
+def ensure_upload_dirs():
+    try:
+        for subdir in ['id_documents', 'medical_certificates', 'address_proofs']:
+            dir_path = os.path.join(app.config['UPLOAD_FOLDER'], subdir)
+            os.makedirs(dir_path, exist_ok=True)
+            # Ensure directory is readable and writable
+            os.chmod(dir_path, 0o755)
+        logging.info("Upload directories created successfully")
+    except Exception as e:
+        logging.error(f"Error creating upload directories: {str(e)}")
+        raise
+
+ensure_upload_dirs()
+
+from flask_migrate import Migrate
 
 # Import these after initializing app
 from extensions import db
-from models import AdminActionLog, PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
+from models import AdminActionLog, PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification, Message, ChatSession
 from utils import admin_required, calculate_blood_compatibility, donor_required, log_admin_action, receiver_required, format_verification_status, calculate_next_donation_date, validate_password_complexity
 
-# Initialize SQLAlchemy
+# Initialize extensions
+from extensions import init_app
+init_app(app)
 db.init_app(app)
+migrate = Migrate(app, db)
+
+# Configure logging for file operations
+logging.getLogger().setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+))
+logging.getLogger().addHandler(handler)
+
+# Register blueprints
+from routes.chat import chat
+app.register_blueprint(chat)
 
 # Configure Flask-Login
 login_manager = LoginManager()
@@ -59,21 +90,76 @@ def allowed_file(filename):
 
 def save_file(file, subfolder):
     """Save file to upload folder and return filename"""
-    if file and allowed_file(file.filename):
+    if not file or not file.filename:
+        logging.warning("No file provided")
+        return None
+
+    if not allowed_file(file.filename):
+        logging.warning(f"Invalid file type: {file.filename}")
+        return None
+
+    try:
+        # Create directory if it doesn't exist
+        upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], subfolder)
+        if not os.path.exists(upload_dir):
+            logging.info(f"Creating directory: {upload_dir}")
+            os.makedirs(upload_dir, exist_ok=True)
+        
+        # Set directory permissions
+        try:
+            os.chmod(upload_dir, 0o777)
+            logging.info(f"Set permissions for directory: {upload_dir}")
+        except Exception as perm_error:
+            logging.error(f"Error setting directory permissions: {str(perm_error)}")
+
+        # Secure and save the file
         filename = secure_filename(file.filename)
-        # Add timestamp to filename to make it unique
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = f"{timestamp}_{filename}"
         
-        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], subfolder, filename)
+        upload_path = os.path.join(upload_dir, filename)
+        logging.info(f"Attempting to save file to: {upload_path}")
+        
+        # Save the file with proper permissions
         file.save(upload_path)
-        return filename
-    return None
+        try:
+            os.chmod(upload_path, 0o666)
+            logging.info(f"Set permissions for file: {upload_path}")
+        except Exception as file_perm_error:
+            logging.error(f"Error setting file permissions: {str(file_perm_error)}")
+        
+        # Verify file was saved
+        if os.path.exists(upload_path):
+            logging.info(f"File saved successfully: {upload_path}")
+            return filename
+        else:
+            logging.error(f"File not found after save attempt: {upload_path}")
+            return None
+            
+    except Exception as e:
+        logging.error(f"Error saving file: {str(e)}, type: {type(e)}")
+        logging.error(f"Upload directory: {upload_dir}")
+        logging.error(f"File info - name: {file.filename}, content_type: {file.content_type}")
+        return None
 
 # Context processor for common variables
 @app.context_processor
 def inject_common_variables():
-    context = {'now': datetime.utcnow()}
+    context = {
+        'now': datetime.utcnow(),
+        'unread_messages_count': 0
+    }
+    
+    # Add unread messages count for logged-in users
+    if current_user.is_authenticated:
+        context['unread_messages_count'] = Message.query.join(ChatSession).filter(
+            db.or_(
+                ChatSession.donor_id == current_user.id,
+                ChatSession.receiver_id == current_user.id
+            ),
+            Message.sender_id != current_user.id,
+            Message.is_read == False
+        ).count()
     
     # If user is logged in as admin, inject admin dashboard data
     if current_user.is_authenticated and current_user.role == 'admin':
@@ -184,44 +270,45 @@ def disable_2fa():
 @donor_required
 def verify_donor():
     """Page for donors to submit verification documents"""
-    # Check if user already has a pending or approved verification
-    existing_verification = DonorVerification.query.filter(
-        DonorVerification.donor_id == current_user.id, 
-        DonorVerification.status.in_(['pending', 'approved'])
-    ).first()
-    
-    if existing_verification and existing_verification.status == 'approved':
-        flash('You are already verified!', 'info')
-        return redirect(url_for('donor_dashboard'))
-    
-    if existing_verification and existing_verification.status == 'pending':
-        flash('Your verification is still being reviewed.', 'info')
-        return redirect(url_for('verification_status'))
-    
-    if request.method == 'POST':
-        try:
+    try:
+        # Check if user already has a pending or approved verification
+        existing_verification = DonorVerification.query.filter(
+            DonorVerification.donor_id == current_user.id, 
+            DonorVerification.status.in_(['pending', 'approved'])
+        ).first()
+        
+        if existing_verification and existing_verification.status == 'approved':
+            flash('You are already verified!', 'info')
+            return redirect(url_for('donor_dashboard'))
+        
+        if existing_verification and existing_verification.status == 'pending':
+            flash('Your verification is still being reviewed.', 'info')
+            return redirect(url_for('verification_status'))
+        
+        if request.method == 'POST':
+            logging.info("Processing verification submission")
             # Handle file uploads
             id_document = request.files.get('id_document')
             medical_certificate = request.files.get('medical_certificate')
             address_proof = request.files.get('address_proof')
             
-            id_filename = save_file(id_document, 'id_documents') if id_document else None
+            logging.debug(f"Files received - ID: {bool(id_document)}, Medical: {bool(medical_certificate)}, Address: {bool(address_proof)}")
+            
+            # Make sure required files are present
+            if not id_document:
+                flash('ID Document is required', 'danger')
+                return render_template('verify_donor.html')
+            
+            # Save files and get filenames
+            id_filename = save_file(id_document, 'id_documents')
+            if not id_filename:
+                flash('Error saving ID document. Please try again.', 'danger')
+                return render_template('verify_donor.html')
+            
             medical_filename = save_file(medical_certificate, 'medical_certificates') if medical_certificate else None
             address_filename = save_file(address_proof, 'address_proofs') if address_proof else None
             
-            # Capture questionnaire responses
-            questionnaire_data = {
-                'recent_illness': request.form.get('recent_illness'),
-                'medication': request.form.get('medication'),
-                'last_donation': request.form.get('last_donation'),
-                'has_allergies': request.form.get('has_allergies'),
-                'allergies_details': request.form.get('allergies_details'),
-                'blood_transfusion': request.form.get('blood_transfusion'),
-                'recent_surgery': request.form.get('recent_surgery'),
-                'chronic_conditions': request.form.get('chronic_conditions'),
-                'travel_history': request.form.get('travel_history'),
-                'consented': request.form.get('consent') == 'on'
-            }
+            logging.info(f"Files saved - ID: {id_filename}, Medical: {medical_filename}, Address: {address_filename}")
             
             # Create verification record
             verification = DonorVerification(
@@ -230,15 +317,13 @@ def verify_donor():
                 id_document_filename=id_filename,
                 medical_certificate_filename=medical_filename,
                 address_proof_filename=address_filename,
-                questionnaire_responses=json.dumps(questionnaire_data)
+                questionnaire_responses=json.dumps(request.form.to_dict())
             )
             
-            # Update user verification status
+            db.session.add(verification)
             current_user.verification_status = 'pending'
             
-            db.session.add(verification)
-            
-            # Notify all admins about new verification
+            # Notify admins
             admins = User.query.filter_by(role='admin').all()
             for admin in admins:
                 notification_handlers['admin_verification'](
@@ -247,13 +332,14 @@ def verify_donor():
                 )
             
             db.session.commit()
-            flash('Your verification documents have been submitted and will be reviewed shortly.', 'success')
+            flash('Your verification documents have been submitted successfully!', 'success')
             return redirect(url_for('verification_status'))
             
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Verification submission error: {str(e)}")
-            flash('An error occurred while submitting your verification. Please try again.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Verification submission error: {str(e)}")
+        flash('An error occurred while submitting your verification. Please try again.', 'danger')
+        return render_template('verify_donor.html')
     
     return render_template('verify_donor.html')
 
@@ -1784,6 +1870,44 @@ notification_handlers.update({
     'request_update': notify_request_update,
     'donation_result': notify_donation_result
 })
+@app.route('/test-upload', methods=['GET', 'POST'])
+def test_upload():
+    """Test route for file uploads"""
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'danger')
+            return redirect(request.url)
+        
+        if file and allowed_file(file.filename):
+            try:
+                filename = save_file(file, 'id_documents')
+                if filename:
+                    flash(f'File uploaded successfully: {filename}', 'success')
+                else:
+                    flash('Error saving file', 'danger')
+            except Exception as e:
+                logging.error(f"Upload error: {str(e)}")
+                flash('Error uploading file', 'danger')
+        else:
+            flash('Invalid file type', 'danger')
+        
+        return redirect(request.url)
+    
+    return '''
+    <!doctype html>
+    <title>Test File Upload</title>
+    <h1>Test File Upload</h1>
+    <form method=post enctype=multipart/form-data>
+        <input type=file name=file>
+        <input type=submit value=Upload>
+    </form>
+    '''
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

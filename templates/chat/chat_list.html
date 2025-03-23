@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Chat Messages</h2>
+            
+            <div class="chat-list-container bg-white rounded shadow-sm">
+                {% if chat_sessions %}
+                    {% for chat in chat_sessions %}
+                        {% set other_user = chat.receiver if current_user.id == chat.donor_id else chat.donor %}
+                        {% set last_message = chat.messages.order_by(Message.created_at.desc()).first() %}
+                        <a href="{{ url_for('chat.chat_view', user_id=other_user.id) }}" class="chat-list-item d-flex align-items-center text-decoration-none text-dark p-3 border-bottom position-relative">
+                            <div class="chat-avatar rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-secondary"></i>
+                            </div>
+                            <div class="chat-details ms-3 flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{{ other_user.get_full_name() }}</h6>
+                                    {% if last_message %}
+                                        <small class="text-muted">{{ last_message.created_at|timeago }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">
+                                    {% if last_message %}
+                                        {% if last_message.sender_id == current_user.id %}
+                                            <i class="fas fa-reply text-muted me-1"></i>
+                                        {% endif %}
+                                        {{ last_message.content|truncate(50) }}
+                                    {% else %}
+                                        No messages yet
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Unread message badge -->
+                            <div class="unread-badge position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
+                                <span class="badge bg-danger rounded-pill unread-count" data-chat-id="{{ chat.id }}"></span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-comments text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted">No Conversations Yet</h5>
+                        <p class="text-muted">Start chatting with donors or recipients to coordinate blood donations.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-list-container {
+    border: 1px solid #dee2e6;
+}
+
+.chat-list-item {
+    transition: background-color 0.2s;
+}
+
+.chat-list-item:hover {
+    background-color: #f8f9fa;
+}
+
+.unread-badge {
+    visibility: hidden;
+}
+
+.unread-badge.show {
+    visibility: visible;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to update unread counts for all chats
+    function updateUnreadCounts() {
+        document.querySelectorAll('.unread-count').forEach(badge => {
+            const chatId = badge.dataset.chatId;
+            fetch(`/chat/messages/${chatId}/unread`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count;
+                        badge.closest('.unread-badge').classList.add('show');
+                    } else {
+                        badge.closest('.unread-badge').classList.remove('show');
+                    }
+                });
+        });
+    }
+
+    // Update initially and every 30 seconds
+    updateUnreadCounts();
+    setInterval(updateUnreadCounts, 30000);
+});
+</script>
+{% endblock %}

@@ -220,3 +220,29 @@ class Notification(db.Model):
         db.session.add(notification)
         db.session.commit()
         return notification
+
+class ChatSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    donor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    donor = db.relationship('User', foreign_keys=[donor_id], backref='donor_chats')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='receiver_chats')
+    messages = db.relationship('Message', backref='chat_session', lazy='dynamic')
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    chat_session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    attachment_url = db.Column(db.String(500))  # For file/image sharing
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    sender = db.relationship('User', backref='sent_messages')
+    
+    pass

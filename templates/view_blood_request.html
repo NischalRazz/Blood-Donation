@@ -38,6 +38,14 @@
                         {% if request.requester.phone %}
                             <p class="text-muted mb-0"><i class="fas fa-phone me-1"></i> {{ request.requester.phone }}</p>
                         {% endif %}
+                        
+                        {% if current_user.role == 'donor' and request.status == 'pending' %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('chat.chat_view', user_id=request.requester.id) }}" class="btn btn-danger">
+                                    <i class="fas fa-comments me-1"></i> Chat with Requester
+                                </a>
+                            </div>
+                        {% endif %}
                     </div>
 
                     <div class="requester-details">
@@ -129,11 +137,13 @@
                         <div class="stock-indicator mb-4">
                             <div class="progress">
                                 {% set stock_percentage = blood_availability.get('percentage', 0) %}
-                                <div class="progress-bar bg-{{ blood_availability.get('status_class', 'danger') }}" role="progressbar" style="width: '{{ stock_percentage }}%';">
+                                <div class="progress-bar bg-{{ blood_availability.get('status_class', 'danger') }}" 
+                                    role="progressbar" 
+                                    style="width: {{ stock_percentage }}%">
                                     {{ stock_percentage }}%
                                 </div>
                             </div>
-                                <div class="progress-bar bg-{{ blood_availability.get('status_class', 'danger') }}" role="progressbar" style="width: {{ stock_percentage }}%;">
+                            <div class="mt-2 d-flex justify-content-between">
                                 <small class="text-muted">Available: {{ blood_availability.get('available_units', 0) }} units</small>
                                 <small class="text-muted">Needed: {{ request.units_needed }} units</small>
                             </div>
@@ -320,4 +330,3 @@
     }
 </style>
 {% endblock %}
-
