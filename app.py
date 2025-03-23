@@ -1870,6 +1870,47 @@ notification_handlers.update({
     'request_update': notify_request_update,
     'donation_result': notify_donation_result
 })
+
+@app.route('/admin/toggle-user-status/<int:user_id>/<action>')
+@login_required
+@admin_required
+def admin_toggle_user_status(user_id, action):
+    """Toggle a user's active status"""
+    if action not in ['activate', 'deactivate']:
+        flash('Invalid action', 'danger')
+        return redirect(url_for('admin_users'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    try:
+        # Can't deactivate yourself
+        if user.id == current_user.id:
+            flash('You cannot deactivate your own account', 'danger')
+            return redirect(url_for('admin_view_user', user_id=user.id))
+        
+        # Toggle status
+        user.is_active = (action == 'activate')
+        
+        # Log the admin action
+        log_admin_action(
+            admin_user=current_user,
+            action_type=f'user_{action}',
+            target_user=user,
+            details={
+                'previous_status': not user.is_active,
+                'new_status': user.is_active
+            }
+        )
+        
+        db.session.commit()
+        flash(f'User has been {"activated" if user.is_active else "deactivated"}', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error toggling user status: {str(e)}")
+        flash('An error occurred while updating user status', 'danger')
+    
+    return redirect(url_for('admin_view_user', user_id=user.id))
 @app.route('/test-upload', methods=['GET', 'POST'])
 def test_upload():
     """Test route for file uploads"""

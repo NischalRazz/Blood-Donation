@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_users') }}">Users</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ user.first_name }} {{ user.last_name }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">User Details</h4>
+            <span class="badge bg-{{ 'success' if user.is_active else 'danger' }}">{{ 'Active' if user.is_active else 'Inactive' }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Phone:</strong> {{ user.phone or 'Not provided' }}</p>
+                    <p><strong>Role:</strong> <span class="badge bg-primary">{{ user.role.capitalize() }}</span></p>
+                    <p><strong>Member Since:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Address:</strong> {{ user.address or 'Not provided' }}</p>
+                    <p><strong>Gender:</strong> {{ user.gender.capitalize() if user.gender else 'Not provided' }}</p>
+                    <p><strong>Birth Date:</strong> {{ user.date_of_birth.strftime('%B %d, %Y') if user.date_of_birth else 'Not provided' }}</p>
+                    <p><strong>Blood Type:</strong> {{ user.blood_type or 'Not provided' }}</p>
+                    {% if user.role == 'donor' %}
+                        <p><strong>Verification Status:</strong> 
+                            <span class="badge bg-{{ 'success' if user.is_verified else 'warning' }}">
+                                {{ user.verification_status.capitalize() if user.verification_status else 'Not Verified' }}
+                            </span>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.role == 'donor' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Donor Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Total Donations</h6>
+                            <h3>{{ user_stats.total_donations }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Total Units Donated</h6>
+                            <h3>{{ user_stats.total_units }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Last Donation</h6>
+                            <h3>{{ user_stats.last_donation.donation_date.strftime('%d %b %Y') if user_stats.last_donation else 'Never' }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elif user.role == 'receiver' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Receiver Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Total Requests</h6>
+                            <h3>{{ user_stats.total_requests }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Pending Requests</h6>
+                            <h3>{{ user_stats.pending_requests }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <h6>Fulfilled Requests</h6>
+                            <h3>{{ user_stats.fulfilled_requests }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('admin_reset_password', user_id=user.id) }}" class="btn btn-warning">
+                    <i class="fas fa-key"></i> Reset Password
+                </a>
+                {% if user.is_active %}
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+                        <i class="fas fa-user-times"></i> Deactivate User
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#activateModal">
+                        <i class="fas fa-user-check"></i> Activate User
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deactivation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to deactivate this user? They will no longer be able to log in or use the system.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{{ url_for('admin_toggle_user_status', user_id=user.id, action='deactivate') }}" class="btn btn-danger">Deactivate</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activate Modal -->
+<div class="modal fade" id="activateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Activation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to activate this user? They will be able to log in and use the system again.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{{ url_for('admin_toggle_user_status', user_id=user.id, action='activate') }}" class="btn btn-success">Activate</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
