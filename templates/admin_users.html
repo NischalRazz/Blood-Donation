@@ -108,7 +108,7 @@
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ user.id }}">
                                                 <li>
-                                                    <a class="dropdown-item" href="#">
+                                                    <a class="dropdown-item" href="{{ url_for('admin_view_user', user_id=user.id) }}">
                                                         <i class="fas fa-eye me-2"></i> View Details
                                                     </a>
                                                 </li>
