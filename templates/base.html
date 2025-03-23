@@ -119,14 +119,29 @@
                             <div class="dropdown-header d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">Notifications</h6>
                                 {% if unread_notifications %}
-                                    <a href="{{ url_for('mark_all_read') }}" class="text-decoration-none small">Mark all read</a>
+                                    <button onclick="markAllNotificationsRead(event)" class="btn btn-link p-0 text-decoration-none small">Mark all read</button>
                                 {% endif %}
                             </div>
                             <div class="notification-list" style="max-height: 300px; overflow-y: auto;">
                                 {% if recent_notifications %}
                                     {% for notification in recent_notifications %}
-                                        <a href="{{ notification.link or '#' }}" class="dropdown-item notification-item {% if not notification.is_read %}unread{% endif %}">
-                                            <!-- Rest of the notification item code -->
+                                        <a href="{{ notification.link or '#' }}" class="dropdown-item notification-item {% if not notification.is_read %}unread{% endif %} d-flex align-items-center p-2">
+                                            <div class="notification-icon bg-{{ notification.type }} text-white me-3 p-2 rounded">
+                                                {% if notification.type == 'success' %}
+                                                    <i class="fas fa-check"></i>
+                                                {% elif notification.type == 'warning' %}
+                                                    <i class="fas fa-exclamation"></i>
+                                                {% elif notification.type == 'danger' %}
+                                                    <i class="fas fa-times"></i>
+                                                {% else %}
+                                                    <i class="fas fa-info"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                                <p class="mb-0 small text-muted">{{ notification.message }}</p>
+                                                <small class="text-muted">{{ notification.created_at|timeago }}</small>
+                                            </div>
                                         </a>
                                     {% endfor %}
                                     {% if recent_notifications|length >= 5 %}
@@ -563,6 +578,38 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Example usage: Show a notification when a new blood request matches
     // showNotificationToast('Blood Request Match', 'A new blood request matches your blood type!', 'danger');
+
+    // Handle mark all notifications read
+    function markAllNotificationsRead(event) {
+        event.preventDefault();
+        
+        fetch('{{ url_for("mark_all_read") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove unread styling from all notifications
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+                
+                // Update/remove notification badge
+                const badge = document.querySelector('#notificationDropdown .badge');
+                if (badge) {
+                    badge.remove();
+                }
+                
+                // Hide the mark all read button
+                event.target.style.display = 'none';
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
     </script>
 </body>
 </html>

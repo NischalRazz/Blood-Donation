@@ -30,17 +30,12 @@
                                         <i class="fas fa-info"></i>
                                     {% endif %}
                                 </div>
-                                <div class="notification-content flex-grow-1">
+                                <div class="notification-content flex-grow-1" style="cursor: pointer" onclick="window.location='{{ notification.link }}'">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <h6 class="mb-1">{{ notification.title }}</h6>
                                         <small class="text-muted">{{ notification.created_at|timeago }}</small>
                                     </div>
                                     <p class="mb-2">{{ notification.message }}</p>
-                                    {% if notification.link %}
-                                        <a href="{{ notification.link }}" class="btn btn-sm btn-outline-{{ notification.type }}">
-                                            View Details
-                                        </a>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -98,7 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('{{ url_for("mark_all_read") }}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
                 }
             })
             .then(response => response.json())
@@ -129,7 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(`{{ url_for("mark_notification_read", notification_id=0) }}`.replace('0', notificationId), {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     }
                 })
                 .then(response => response.json())
