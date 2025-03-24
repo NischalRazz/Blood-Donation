@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Blood Donation Programs{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-4 text-danger mb-4">Blood Donation Programs</h1>
+            <p class="lead">Join our upcoming blood donation events and help save lives!</p>
+        </div>
+        <div class="col-md-4 text-md-end align-self-center">
+            {% if current_user.is_authenticated and current_user.role == 'donor' %}
+                <a href="{{ url_for('donor_dashboard') }}" class="btn btn-outline-danger">My Dashboard</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm bg-light">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle text-primary"></i> Why Donate?</h5>
+                    <p class="card-text">Your donation can save up to 3 lives! The donation process is safe, simple, and takes only about 10-15 minutes. After donating, you'll receive refreshments and can rest before leaving.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-4">Upcoming Donation Events</h2>
+
+    {% if upcoming_programs %}
+        <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+            {% for program in upcoming_programs %}
+                <div class="col">
+                    <div class="card h-100 {% if program.status == 'ongoing' %}border-success{% else %}border-primary{% endif %} shadow-sm">
+                        {% if program.status == 'ongoing' %}
+                            <div class="ribbon ribbon-top-right"><span>ONGOING</span></div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ program.title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ program.date.strftime('%A, %B %d, %Y') }}</h6>
+                            
+                            <div class="mb-3">
+                                <p class="mb-1"><i class="fas fa-map-marker-alt text-danger"></i> <strong>Location:</strong> {{ program.location }}</p>
+                                <p class="mb-1"><i class="fas fa-clock text-danger"></i> <strong>Time:</strong> {{ program.start_time.strftime('%I:%M %p') }} - {{ program.end_time.strftime('%I:%M %p') }}</p>
+                                <p class="mb-1"><i class="fas fa-users text-danger"></i> <strong>Capacity:</strong> {{ program.current_donors }} / {{ program.max_donors }} donors</p>
+                            </div>
+                            
+                            {% if program.description %}
+                                <p class="card-text">{{ program.description|truncate(100) }}</p>
+                            {% endif %}
+                            
+                            <div class="progress mb-3" style="height: 10px;">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (program.current_donors / program.max_donors) * 100 }}%;" 
+                                    aria-valuenow="{{ program.current_donors }}" aria-valuemin="0" aria-valuemax="{{ program.max_donors }}"></div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {% if current_user.is_authenticated and current_user.role == 'donor' %}
+                                    {% if program.current_donors >= program.max_donors %}
+                                        <button class="btn btn-secondary" disabled>Event Full</button>
+                                    {% elif user_registrations.get(program.id) %}
+                                        <a href="{{ url_for('donation_programs.view_registration', program_id=program.id) }}" class="btn btn-success">
+                                            <i class="fas fa-check-circle"></i> Registered
+                                        </a>
+                                        <form action="{{ url_for('donation_programs.cancel_registration', program_id=program.id) }}" method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-outline-danger mt-2">Cancel Registration</button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for('donation_programs.register_for_program', program_id=program.id) }}" method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Register Now</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ url_for('login') }}" class="btn btn-outline-danger">Login to Register</a>
+                                {% endif %}
+                                
+                                <a href="#" class="btn btn-link btn-sm text-center" data-bs-toggle="modal" data-bs-target="#programModal{{ program.id }}">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal for program details -->
+                <div class="modal fade" id="programModal{{ program.id }}" tabindex="-1" aria-labelledby="programModalLabel{{ program.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="programModalLabel{{ program.id }}">{{ program.title }}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-calendar-alt text-danger"></i> Date & Time</h6>
+                                        <p>{{ program.date.strftime('%A, %B %d, %Y') }}<br>
+                                        {{ program.start_time.strftime('%I:%M %p') }} - {{ program.end_time.strftime('%I:%M %p') }}</p>
+                                        
+                                        <h6><i class="fas fa-map-marker-alt text-danger"></i> Location</h6>
+                                        <p>{{ program.location }}<br>{{ program.address }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-users text-danger"></i> Capacity</h6>
+                                        <p>{{ program.current_donors }} / {{ program.max_donors }} registered donors</p>
+                                        
+                                        <div class="progress mb-3" style="height: 15px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (program.current_donors / program.max_donors) * 100 }}%;" 
+                                                aria-valuenow="{{ program.current_donors }}" aria-valuemin="0" aria-valuemax="{{ program.max_donors }}">
+                                                {{ program.current_donors }} / {{ program.max_donors }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <h6><i class="fas fa-info-circle text-danger"></i> Program Details</h6>
+                                <p>{{ program.description or 'No additional details available.' }}</p>
+                                
+                                <h6><i class="fas fa-clipboard-list text-danger"></i> What to Bring</h6>
+                                <ul>
+                                    <li>A valid ID with photo</li>
+                                    <li>List of medications you're currently taking</li>
+                                    <li>Information about recent travel or vaccinations</li>
+                                </ul>
+                                
+                                <h6><i class="fas fa-heartbeat text-danger"></i> Eligibility Requirements</h6>
+                                <ul>
+                                    <li>Must be at least 18 years old</li>
+                                    <li>Weight at least 50kg (110 lbs)</li>
+                                    <li>Be in good health condition</li>
+                                    <li>No blood donation in the last 3 months</li>
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                {% if current_user.is_authenticated and current_user.role == 'donor' %}
+                                    {% if not user_registrations.get(program.id) and program.current_donors < program.max_donors %}
+                                        <form action="{{ url_for('donation_programs.register_for_program', program_id=program.id) }}" method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Register Now</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> There are no upcoming donation programs at this time. Please check back later.
+        </div>
+    {% endif %}
+    
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h3 class="card-title text-danger">Preparation Tips</h3>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="fas fa-utensils text-danger"></i> Have a healthy meal before donating</li>
+                        <li class="list-group-item"><i class="fas fa-tint text-danger"></i> Drink plenty of water</li>
+                        <li class="list-group-item"><i class="fas fa-bed text-danger"></i> Get a good night's sleep</li>
+                        <li class="list-group-item"><i class="fas fa-pills text-danger"></i> Avoid taking aspirin 48 hours before donation</li>
+                        <li class="list-group-item"><i class="fas fa-id-card text-danger"></i> Bring your ID and donor card if you have one</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h3 class="card-title text-danger">After Donation Care</h3>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="fas fa-cookie-bite text-danger"></i> Enjoy refreshments provided at the donation site</li>
+                        <li class="list-group-item"><i class="fas fa-chair text-danger"></i> Rest for at least 10-15 minutes after donating</li>
+                        <li class="list-group-item"><i class="fas fa-glass-water text-danger"></i> Drink extra fluids for the next 24-48 hours</li>
+                        <li class="list-group-item"><i class="fas fa-dumbbell text-danger"></i> Avoid strenuous physical activity for 24 hours</li>
+                        <li class="list-group-item"><i class="fas fa-ban text-danger"></i> Avoid alcohol consumption for 24 hours</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

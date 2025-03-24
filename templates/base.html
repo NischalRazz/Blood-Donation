@@ -55,6 +55,25 @@
                                 <a class="nav-link" href="{{ url_for('request_blood') }}">Request Blood</a>
                             </li>
                         {% endif %}
+                        {% if current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('donation_programs.admin_programs') }}">
+                                <i class="fas fa-calendar-alt"></i> Donation Programs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('donation_programs.blood_inventory') }}">
+                                <i class="fas fa-vial"></i> Blood Inventory
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('donation_programs.list_programs') }}">
+                                <i class="fas fa-calendar-alt"></i> Donation Programs
+                            </a>
+                        </li>
+                        {% endif %}
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('blood_requests') }}">Blood Requests</a>
                         </li>

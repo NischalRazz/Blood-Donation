@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Registration Details{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i> Donation Program Registration
+                    </h4>
+                    <span class="badge bg-light text-primary">
+                        {% if registration.status == 'registered' %}
+                            Registered
+                        {% elif registration.status == 'checked_in' %}
+                            Checked In
+                        {% elif registration.status == 'donated' %}
+                            Donated
+                        {% elif registration.status == 'no_show' %}
+                            No Show
+                        {% elif registration.status == 'cancelled' %}
+                            Cancelled
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h3 class="card-title">{{ program.title }}</h3>
+                        <p class="card-subtitle text-muted">
+                            {{ program.date.strftime('%A, %B %d, %Y') }}
+                        </p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-map-marker-alt text-danger"></i> Location</h5>
+                            <p class="mb-0">{{ program.location }}</p>
+                            <p class="text-muted">{{ program.address }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-clock text-danger"></i> Time</h5>
+                            <p>{{ program.start_time.strftime('%I:%M %p') }} - {{ program.end_time.strftime('%I:%M %p') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Registration Information</h5>
+                                <p class="mb-0">You registered on {{ registration.registration_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                {% if registration.status == 'registered' and program.status == 'upcoming' %}
+                                    <p class="mt-2">Please arrive at the venue with a valid ID. If you can't attend, please cancel your registration at least 24 hours before the event.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if program.description %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-align-left text-danger"></i> Program Details</h5>
+                        <p>{{ program.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h5><i class="fas fa-clipboard-list text-danger"></i> What to Bring</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item"><i class="fas fa-id-card text-primary me-2"></i> A valid ID with photo</li>
+                            <li class="list-group-item"><i class="fas fa-pills text-primary me-2"></i> List of current medications (if any)</li>
+                            <li class="list-group-item"><i class="fas fa-utensils text-primary me-2"></i> Eat a full meal 2-3 hours before donating</li>
+                            <li class="list-group-item"><i class="fas fa-tint text-primary me-2"></i> Stay hydrated - drink plenty of water</li>
+                            <li class="list-group-item"><i class="fas fa-tshirt text-primary me-2"></i> Wear comfortable clothing with sleeves that can be rolled up</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5><i class="fas fa-heartbeat text-danger"></i> Donation Day Schedule</h5>
+                            <ol class="mb-0">
+                                <li>Registration and check-in</li>
+                                <li>Health screening and mini physical examination</li>
+                                <li>Donation process (approximately 10-15 minutes)</li>
+                                <li>Refreshments and rest</li>
+                            </ol>
+                            <p class="mt-3 mb-0 small text-muted">The entire process usually takes about 45-60 minutes from start to finish.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        {% if registration.status == 'registered' and program.status == 'upcoming' %}
+                            <p class="text-muted mb-3">Need to cancel your registration?</p>
+                            <form action="{{ url_for('donation_programs.cancel_registration', program_id=program.id) }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel your registration?');">
+                                    <i class="fas fa-times-circle"></i> Cancel Registration
+                                </button>
+                            </form>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('donation_programs.list_programs') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-calendar-alt"></i> View All Programs
+                        </a>
+                    </div>
+                    
+                    {% if registration.notes %}
+                    <div class="alert alert-warning mt-4">
+                        <h5><i class="fas fa-sticky-note"></i> Notes</h5>
+                        <p class="mb-0">{{ registration.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if registration.status == 'donated' %}
+                <div class="card-footer bg-success bg-opacity-10 text-center py-3">
+                    <h5 class="text-success mb-0"><i class="fas fa-heart"></i> Thank you for your donation!</h5>
+                    <p class="mb-0">Your donation can save up to 3 lives.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if program.status == 'upcoming' or program.status == 'ongoing' %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h5><i class="fas fa-calendar-day text-danger"></i> Event Location</h5>
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d-73.9820817!3d40.7724527!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQ2JzIwLjgiTiA3M8KwNTknMDUuOSJX!5e0!3m2!1sen!2sus!4v1500000000000!5m2!1sen!2sus" 
+                                width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <div class="alert alert-primary mt-3 mb-0">
+                        <i class="fas fa-info-circle"></i> This map shows an approximate location. Please refer to the exact address provided.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

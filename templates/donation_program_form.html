@@ -1,0 +1,136 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}{{ 'Edit' if program else 'New' }} Donation Program{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-{{ 'edit' if program else 'plus-circle' }} text-primary me-2"></i>
+                        {{ 'Edit' if program else 'Create New' }} Donation Program
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('donation_programs.edit_program', program_id=program.id) if program else url_for('donation_programs.new_program') }}" method="post" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row g-3">
+                            <!-- Program Title -->
+                            <div class="col-12">
+                                <label for="title" class="form-label">Program Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" value="{{ program.title if program else '' }}" required>
+                                <div class="invalid-feedback">Please enter a program title.</div>
+                            </div>
+                            
+                            <!-- Program Description -->
+                            <div class="col-12">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ program.description if program else '' }}</textarea>
+                                <div class="form-text">Provide details about the donation program, special requirements, etc.</div>
+                            </div>
+                            
+                            <!-- Location -->
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Location Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="location" name="location" value="{{ program.location if program else '' }}" required>
+                                <div class="invalid-feedback">Please enter a location name.</div>
+                                <div class="form-text">E.g., City Hospital, Community Center</div>
+                            </div>
+                            
+                            <!-- Address -->
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="address" name="address" value="{{ program.address if program else '' }}" required>
+                                <div class="invalid-feedback">Please enter the address.</div>
+                            </div>
+                            
+                            <!-- Date -->
+                            <div class="col-md-4">
+                                <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ program.date.strftime('%Y-%m-%d') if program else '' }}" required min="{{ now.strftime('%Y-%m-%d') }}">
+                                <div class="invalid-feedback">Please select a valid date.</div>
+                            </div>
+                            
+                            <!-- Start Time -->
+                            <div class="col-md-4">
+                                <label for="start_time" class="form-label">Start Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ program.start_time.strftime('%H:%M') if program else '' }}" required>
+                                <div class="invalid-feedback">Please enter a start time.</div>
+                            </div>
+                            
+                            <!-- End Time -->
+                            <div class="col-md-4">
+                                <label for="end_time" class="form-label">End Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ program.end_time.strftime('%H:%M') if program else '' }}" required>
+                                <div class="invalid-feedback">Please enter an end time.</div>
+                            </div>
+                            
+                            <!-- Max Donors -->
+                            <div class="col-md-6">
+                                <label for="max_donors" class="form-label">Max Donors <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="max_donors" name="max_donors" value="{{ program.max_donors if program else '50' }}" min="1" required>
+                                <div class="invalid-feedback">Please enter a valid number of donors.</div>
+                                <div class="form-text">Maximum number of donors that can register for this program.</div>
+                            </div>
+                            
+                            <!-- Make Public -->
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_public" name="is_public" {% if program is not defined or program.is_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_public">Make this program public</label>
+                                </div>
+                                <div class="form-text">If checked, this program will be visible on the public donation programs page.</div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('donation_programs.admin_programs') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Programs
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if program else 'Create' }} Program
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JavaScript for form validation
+    (function () {
+        'use strict';
+        
+        // Fetch all forms we want to apply validation to
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        // Loop over and prevent submission on invalid forms
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                // Additional validation for time fields
+                const startTime = document.getElementById('start_time').value;
+                const endTime = document.getElementById('end_time').value;
+                
+                if (startTime && endTime && startTime >= endTime) {
+                    event.preventDefault();
+                    alert('End time must be after start time.');
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %}

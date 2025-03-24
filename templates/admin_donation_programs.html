@@ -1,0 +1,273 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Manage Donation Programs{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-calendar-alt text-danger"></i> Donation Programs</h1>
+        <a href="{{ url_for('donation_programs.new_program') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Program
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase">Upcoming Programs</h6>
+<h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='upcoming').count() }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-plus fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('donation_programs.admin_programs', status='upcoming') }}" class="text-white text-decoration-none">View Details</a>
+                    <div><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase">Ongoing Programs</h6>
+                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='ongoing').count() }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-check fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('donation_programs.admin_programs', status='ongoing') }}" class="text-white text-decoration-none">View Details</a>
+                    <div><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase">Completed Programs</h6>
+                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='completed').count() }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-flag-checkered fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('donation_programs.admin_programs', status='completed') }}" class="text-white text-decoration-none">View Details</a>
+                    <div><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase">Cancelled Programs</h6>
+                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='cancelled').count() }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-times fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('donation_programs.admin_programs', status='cancelled') }}" class="text-white text-decoration-none">View Details</a>
+                    <div><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('donation_programs.admin_programs') }}" method="get" class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                        <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>Ongoing</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <a href="{{ url_for('donation_programs.admin_programs') }}" class="btn btn-outline-secondary">Reset Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Programs List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Donation Programs</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Registrations</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for program in programs.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ program.title }}</strong>
+                            </td>
+                            <td>
+                                <div>{{ program.date.strftime('%b %d, %Y') }}</div>
+                                <small class="text-muted">{{ program.start_time.strftime('%I:%M %p') }} - {{ program.end_time.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>{{ program.location }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">{{ program.current_donors }} / {{ program.max_donors }}</div>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (program.current_donors / program.max_donors) * 100 }}%;" 
+                                            aria-valuenow="{{ program.current_donors }}" aria-valuemin="0" aria-valuemax="{{ program.max_donors }}"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if program.status == 'upcoming' %}
+                                    <span class="badge bg-primary">Upcoming</span>
+                                {% elif program.status == 'ongoing' %}
+                                    <span class="badge bg-success">Ongoing</span>
+                                {% elif program.status == 'completed' %}
+                                    <span class="badge bg-info">Completed</span>
+                                {% elif program.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ program.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ program.id }}">
+                                        <!-- View registrations -->
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('donation_programs.view_program_registrations', program_id=program.id) }}">
+                                                <i class="fas fa-users text-primary"></i> View Registrations
+                                            </a>
+                                        </li>
+                                        
+                                        <!-- Edit program -->
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('donation_programs.edit_program', program_id=program.id) }}">
+                                                <i class="fas fa-edit text-info"></i> Edit Program
+                                            </a>
+                                        </li>
+                                        
+                                        <!-- Status update options -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header">Update Status</h6></li>
+                                        
+                                        {% if program.status != 'ongoing' and program.status != 'cancelled' and program.status != 'completed' %}
+                                            <li>
+                                                <form action="{{ url_for('donation_programs.update_program_status', program_id=program.id, status='ongoing') }}" method="post">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item text-success">
+                                                        <i class="fas fa-play-circle"></i> Mark as Ongoing
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% if program.status != 'completed' and program.status != 'cancelled' %}
+                                            <li>
+                                                <form action="{{ url_for('donation_programs.update_program_status', program_id=program.id, status='completed') }}" method="post">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item text-info">
+                                                        <i class="fas fa-check-circle"></i> Mark as Completed
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% if program.status != 'cancelled' %}
+                                            <li>
+                                                <form action="{{ url_for('donation_programs.update_program_status', program_id=program.id, status='cancelled') }}" method="post">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-ban"></i> Cancel Program
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        <!-- Export registrations -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('donation_programs.view_program_registrations', program_id=program.id, format='csv') }}">
+                                                <i class="fas fa-file-csv text-success"></i> Export Registrations (CSV)
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-calendar-times text-muted fa-2x mb-3"></i>
+                                <p class="mb-0">No donation programs found matching your filters.</p>
+                                <a href="{{ url_for('donation_programs.admin_programs') }}" class="btn btn-sm btn-outline-primary mt-2">Clear Filters</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if programs.pages > 1 %}
+            <div class="card-footer bg-white">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item {% if not programs.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('donation_programs.admin_programs', page=programs.prev_num, status=status_filter) if programs.has_prev else '#' }}">Previous</a>
+                        </li>
+                        {% for page_num in programs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == programs.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('donation_programs.admin_programs', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">...</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not programs.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('donation_programs.admin_programs', page=programs.next_num, status=status_filter) if programs.has_next else '#' }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

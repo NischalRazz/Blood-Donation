@@ -59,7 +59,7 @@ class User(UserMixin, db.Model):
         if not self.is_verified or self.verification_status != 'approved':
             return False, "You need to complete the verification process before donating."
             
-        if self.next_eligible_date and self.next_eligible_date > datetime.utcnow():
+        if self.next_eligible_date and self.next_eligible_date > datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0):
             return False, f"You are not eligible to donate until {self.next_eligible_date.strftime('%Y-%m-%d')}."
             
         return True, "You are eligible to donate blood."
@@ -246,3 +246,117 @@ class Message(db.Model):
     sender = db.relationship('User', backref='sent_messages')
     
     pass
+# Add this to your models.py file
+
+class DonationProgram(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    location = db.Column(db.String(200), nullable=False)
+    address = db.Column(db.Text, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    max_donors = db.Column(db.Integer, default=50)
+    current_donors = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='upcoming')  # 'upcoming', 'ongoing', 'completed', 'cancelled'
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_public = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    creator = db.relationship('User', foreign_keys=[created_by])
+    registrations = db.relationship('ProgramRegistration', backref='program', lazy='dynamic')
+    
+    def get_registration_count(self):
+        """Get the number of donors registered for this program"""
+        return ProgramRegistration.query.filter_by(program_id=self.id).count()
+    
+    def is_registered(self, user_id):
+        """Check if a user is registered for this program"""
+        return ProgramRegistration.query.filter_by(
+            program_id=self.id, 
+            donor_id=user_id
+        ).first() is not None
+    
+    def has_space_available(self):
+        """Check if the program has space for more donors"""
+        return self.get_registration_count() < self.max_donors
+    
+    def update_donor_count(self):
+        """Update the current donor count"""
+        self.current_donors = self.get_registration_count()
+
+
+class ProgramRegistration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    program_id = db.Column(db.Integer, db.ForeignKey('donation_program.id'), nullable=False)
+    donor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    registration_date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='registered')  # 'registered', 'checked_in', 'donated', 'no_show', 'cancelled'
+    notes = db.Column(db.Text)
+    
+    # Relationships
+    donor = db.relationship('User', backref='program_registrations')
+    
+    # Make sure each donor can only register once for each program
+    __table_args__ = (db.UniqueConstraint('program_id', 'donor_id', name='unique_program_registration'),)
+
+
+class BloodInventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    blood_type = db.Column(db.String(5), nullable=False)
+    units = db.Column(db.Integer, nullable=False, default=0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Threshold levels for alerts
+    critical_level = db.Column(db.Integer, default=10)
+    low_level = db.Column(db.Integer, default=30)
+    
+    @classmethod
+    def get_inventory_status(cls):
+        """Get the status of all blood types in inventory"""
+        inventory = cls.query.all()
+        
+        result = {}
+        for item in inventory:
+            if item.units <= item.critical_level:
+                status = 'critical'
+            elif item.units <= item.low_level:
+                status = 'low'
+            else:
+                status = 'normal'
+                
+            result[item.blood_type] = {
+                'units': item.units,
+                'status': status,
+                'critical_level': item.critical_level,
+                'low_level': item.low_level,
+                'last_updated': item.last_updated
+            }
+            
+        return result
+    
+    @classmethod
+    def update_inventory(cls, blood_type, units_change):
+        """Update inventory for a specific blood type"""
+        inventory_item = cls.query.filter_by(blood_type=blood_type).first()
+        
+        if not inventory_item:
+            inventory_item = cls(blood_type=blood_type, units=0)
+            db.session.add(inventory_item)
+        
+        # Update units (don't allow negative values)
+        inventory_item.units = max(0, inventory_item.units + units_change)
+        
+        # Check if alert is needed
+        alert_needed = False
+        if inventory_item.units <= inventory_item.critical_level:
+            alert_needed = 'critical'
+        elif inventory_item.units <= inventory_item.low_level:
+            alert_needed = 'low'
+            
+        db.session.commit()
+        
+        return inventory_item, alert_needed

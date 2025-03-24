@@ -10,6 +10,11 @@ from werkzeug.utils import secure_filename
 import qrcode
 import io
 import base64
+
+# Import blueprints
+from routes.donation_programs import donation_programs
+from routes.chat import chat
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -17,7 +22,6 @@ from flask_wtf.csrf import CSRFProtect
 
 # Initialize Flask app first
 app = Flask(__name__)
-
 # Then configure the app
 app.secret_key = os.environ.get("SESSION_SECRET", "dev_key_123")
 
@@ -70,9 +74,31 @@ handler.setFormatter(logging.Formatter(
 ))
 logging.getLogger().addHandler(handler)
 
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('errors/500.html'), 500
+
 # Register blueprints
-from routes.chat import chat
+app.register_blueprint(donation_programs)
 app.register_blueprint(chat)
+
+# Initialize blood inventory if empty
+def init_blood_inventory():
+    blood_types = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    with app.app_context():
+        from models import BloodInventory
+        for blood_type in blood_types:
+            if not BloodInventory.query.filter_by(blood_type=blood_type).first():
+                inventory_item = BloodInventory(blood_type=blood_type, units=0)
+                db.session.add(inventory_item)
+        db.session.commit()
+
 
 # Configure Flask-Login
 login_manager = LoginManager()
@@ -1952,4 +1978,5 @@ def test_upload():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        init_blood_inventory()
     app.run(host='0.0.0.0', port=5000, debug=True)
