@@ -19,7 +19,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase">Upcoming Programs</h6>
-<h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='upcoming').count() }}</h2>
+                            <h2 class="mb-0">{{ status_counts['upcoming'] }}</h2>
                         </div>
                         <div>
                             <i class="fas fa-calendar-plus fa-2x opacity-50"></i>
@@ -39,7 +39,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase">Ongoing Programs</h6>
-                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='ongoing').count() }}</h2>
+                            <h2 class="mb-0">{{ status_counts['ongoing'] }}</h2>
                         </div>
                         <div>
                             <i class="fas fa-calendar-check fa-2x opacity-50"></i>
@@ -59,7 +59,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase">Completed Programs</h6>
-                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='completed').count() }}</h2>
+                            <h2 class="mb-0">{{ status_counts['completed'] }}</h2>
                         </div>
                         <div>
                             <i class="fas fa-flag-checkered fa-2x opacity-50"></i>
@@ -79,7 +79,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase">Cancelled Programs</h6>
-                            <h2 class="mb-0">{{ programs.total if programs.total else DonationProgram.query.filter_by(status='cancelled').count() }}</h2>
+                            <h2 class="mb-0">{{ status_counts['cancelled'] }}</h2>
                         </div>
                         <div>
                             <i class="fas fa-calendar-times fa-2x opacity-50"></i>

@@ -55,11 +55,19 @@ def admin_programs():
     # Paginate results
     programs = query.paginate(page=page, per_page=per_page)
     
+    # Get counts for each status
+    status_counts = {
+        'upcoming': DonationProgram.query.filter_by(status='upcoming').count(),
+        'ongoing': DonationProgram.query.filter_by(status='ongoing').count(),
+        'completed': DonationProgram.query.filter_by(status='completed').count(),
+        'cancelled': DonationProgram.query.filter_by(status='cancelled').count()
+    }
+
     return render_template(
         'admin_donation_programs.html',
         programs=programs,
         status_filter=status_filter,
-        DonationProgram=DonationProgram
+        status_counts=status_counts
     )
 
 @donation_programs.route('/admin/donation-programs/new', methods=['GET', 'POST'])
