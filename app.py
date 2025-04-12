@@ -297,6 +297,13 @@ def disable_2fa():
 def verify_donor():
     """Page for donors to submit verification documents"""
     try:
+        # Create form object for CSRF protection
+        from flask_wtf import FlaskForm
+        class VerificationForm(FlaskForm):
+            pass
+        
+        form = VerificationForm()
+
         # Check if user already has a pending or approved verification
         existing_verification = DonorVerification.query.filter(
             DonorVerification.donor_id == current_user.id, 
@@ -312,6 +319,10 @@ def verify_donor():
             return redirect(url_for('verification_status'))
         
         if request.method == 'POST':
+            if not form.validate_on_submit():
+                flash('Form validation failed. Please try again.', 'danger')
+                return render_template('verify_donor.html', form=form)
+                
             logging.info("Processing verification submission")
             # Handle file uploads
             id_document = request.files.get('id_document')
@@ -323,13 +334,13 @@ def verify_donor():
             # Make sure required files are present
             if not id_document:
                 flash('ID Document is required', 'danger')
-                return render_template('verify_donor.html')
+                return render_template('verify_donor.html', form=form)
             
             # Save files and get filenames
             id_filename = save_file(id_document, 'id_documents')
             if not id_filename:
                 flash('Error saving ID document. Please try again.', 'danger')
-                return render_template('verify_donor.html')
+                return render_template('verify_donor.html', form=form)
             
             medical_filename = save_file(medical_certificate, 'medical_certificates') if medical_certificate else None
             address_filename = save_file(address_proof, 'address_proofs') if address_proof else None
@@ -365,9 +376,9 @@ def verify_donor():
         db.session.rollback()
         logging.error(f"Verification submission error: {str(e)}")
         flash('An error occurred while submitting your verification. Please try again.', 'danger')
-        return render_template('verify_donor.html')
+        return render_template('verify_donor.html', form=form)
     
-    return render_template('verify_donor.html')
+    return render_template('verify_donor.html', form=form)
 
 @app.route('/verification-status')
 @login_required
