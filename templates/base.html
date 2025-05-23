@@ -77,14 +77,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('blood_requests') }}">Blood Requests</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('chat.chat_list') }}">
-                                Chat
-                                {% if unread_messages_count > 0 %}
-                                    <span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>
-                                {% endif %}
-                            </a>
-                        </li>
+                        
                     {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
@@ -247,147 +240,353 @@ document.addEventListener('DOMContentLoaded', () => {
     const newMessageBadge = document.getElementById('chatbot-new-message-badge');
 
     // Expanded intents with comprehensive responses
+    
+
     const expandedIntents = [
-    {
-        id: 'greeting',
-        patterns: [
-            'hi', 'hello', 'hey', 'greetings', 'howdy', 'what\'s up', 
-            'good morning', 'good afternoon', 'good evening'
-        ],
-        responses: [
-            'Hello! I\'m the BloodBridge AI Assistant. How can I help you today?',
-            'Hi there! I\'m ready to assist you with blood donation information.',
-            'Greetings! What questions do you have about donating blood?',
-            'Welcome to BloodBridge! I\'m here to help you save lives through blood donation.',
-            'Hello! Interested in making a difference? Let\'s talk about blood donation.'
-        ]
-    },
-    {
-        id: 'donation_process',
-        patterns: [
-            'how to donate', 'donation process', 'steps to donate','donation process', 
-            'how do i donate', 'blood donation procedure',
-            'what happens during donation'
-        ],
-        responses: [
-            'Blood Donation Process:\n1. Registration\n2. Medical History & Mini-Physical\n3. Donation (10-15 minutes)\n4. Recovery & Refreshments\n\nTotal time: About 1-2 hours',
-            'Donation Steps:\n- Check online eligibility\n- Schedule appointment\n- Bring valid ID\n- Complete health questionnaire\n- Quick medical screening\n- Donate blood\n- Rest and enjoy complimentary snacks',
-            'What to Expect:\n- Warm welcome by staff\n- Private medical review\n- Comfortable donation chair\n- Sterile, safe environment\n- Post-donation care and refreshments'
-        ]
-    },
-    {
-        id: 'eligibility',
-        patterns: [
-            'who can donate', 'am i eligible', 'donation requirements', 
-            'can i donate blood', 'eligibility criteria','eligibility',
-            'restrictions on donation'
-        ],
-        responses: [
-            'Basic Eligibility Requirements:\n- Age: 17-65 years\n- Weight: At least 110 pounds\n- Good general health\n- No recent blood donations\n- No certain medical conditions',
-            'Donation Eligibility Factors:\n1. Age: Minimum 17 (16 with parental consent)\n2. Health: No active infections\n3. Weight: Over 110 pounds\n4. No recent travel to high-risk areas\n5. Not taking certain medications',
-            'Key Considerations:\n- Recent illness\n- Chronic conditions\n- Medication use\n- Travel history\n- Overall physical health'
-        ]
-    },
-    {
-        id: 'medical_conditions',
-        patterns: [
-            'medical conditions and donation', 'can i donate with',
-            'health issues and blood donation', 'medical restrictions',
-            'disqualifying health conditions'
-        ],
-        responses: [
-            'Medical Conditions Affecting Donation:\n- Cannot donate if you have:\n  * HIV/AIDS\n  * Hepatitis B or C\n  * Active cancer\n  * Certain heart conditions\n- Temporary deferrals for:\n  * Recent illness\n  * Some medications\n  * Recent travel',
-            'Health Screening Considerations:\n1. Chronic Conditions\n- Diabetes (if controlled)\n- High blood pressure (if managed)\n- Some autoimmune conditions\n\n2. Medication Impacts\n- Some medications may temporarily disqualify you\n- Consult medical staff for specific guidance',
-            'Donation and Health:\n- Individual assessment is key\n- Medical staff will review your specific situation\n- Honesty about health history is crucial'
-        ]
-    },
-    {
-        id: 'benefits',
-        patterns: [
-            'why donate', 'benefits of donation', 'importance of blood donation', 
-            'how does donation help', 'why is blood donation important','benefits',
-            'impact of donating'
-        ],
-        responses: [
-            'Impact of Blood Donation:\n- Saves up to 3 lives per donation\n- Critical for emergency treatments\n- Supports:\n  * Cancer patients\n  * Surgical procedures\n  * Chronic illness management\n- Provides free health screening',
-            'Donation Benefits:\n1. Medical Impact\n- Emergency surgeries\n- Trauma care\n- Cancer treatments\n\n2. Personal Benefits\n- Free health check-up\n- Potential early disease detection\n- Feeling of making a difference',
-            'Why Donate?\n- Community health support\n- Immediate life-saving potential\n- Personal health insights\n- No cost to you\n- Feeling of heroism'
-        ]
-    },
-    {
-        id: 'blood_types',
-        patterns: [
-            'what blood types', 'blood type compatibility', 'blood types',
-            'who can i donate to', 'universal donor', 'universal recipient'
-        ],
-        responses: [
-            'Blood Type Compatibility:\n- O-: Universal donor (can donate to all)\n- AB+: Universal recipient (can receive from all)\n- A+: Can donate to A+ and AB+\n- B+: Can donate to B+ and AB+\n- O+: Can donate to A+, B+, AB+, O+',
-            'Blood Type Donation Guide:\n1. Universal Donor (O-)\n- Rarest type\n- Can donate to ALL blood types\n\n2. Universal Recipient (AB+)\n- Can receive from ALL blood types\n- Least common type',
-            'Blood Type Facts:\n- 8 different blood types\n- Each type has unique donation capabilities\n- Blood banks need all types\n- Your type matters in donation'
-        ]
-    },
-    {
-        id: 'frequency',
-        patterns: [
-            'how often can i donate', 'donation frequency', 
-            'time between donations', 'how many times a year'
-        ],
-        responses: [
-            'Donation Frequency Guidelines:\n- Whole Blood: Every 56 days\n- Platelets: Every 7 days, up to 24 times a year\n- Plasma: Every 28 days, up to 13 times a year',
-            'Donation Intervals:\n1. Whole Blood\n- Minimum: 8 weeks between donations\n- Allows body to replenish red blood cells\n\n2. Special Donations\n- Platelets: More frequent\n- Plasma: More frequent than whole blood',
-            'Donation Limits:\n- Whole Blood: 6 times per year\n- Platelets: Up to 24 times\n- Plasma: Up to 13 times\n- Individual health determines exact eligibility'
-        ]
-    },
-    {
-        id: 'preparation',
-        patterns: [
-            'how to prepare for donation', 'what should i do before donating',
-            'preparation for blood donation', 'tips before donating'
-        ],
-        responses: [
-            'Preparing for Donation:\n1. Hydration\n- Drink plenty of water\n- Avoid alcohol\n\n2. Nutrition\n- Eat iron-rich foods\n- Have a healthy meal\n- Avoid fatty foods\n\n3. Rest\n- Get good sleep\n- Avoid strenuous exercise',
-            'Pre-Donation Checklist:\n- Drink 16 oz water before donation\n- Eat iron-rich foods\n- Get 7-9 hours of sleep\n- Wear comfortable clothing\n- Bring valid ID\n- Know medical history',
-            'What to Do Before Donating:\n- Stay hydrated\n- Eat balanced meals\n- Get adequate rest\n- Wear comfortable clothes\n- Bring identification\n- Be prepared for quick medical screening'
-        ]
-    },
-    {
-        id: 'after_donation',
-        patterns: [
-            'what to do after donating', 'post donation care',
-            'recovery after blood donation', 'side effects'
-        ],
-        responses: [
-            'Post-Donation Care:\n1. Immediate After-Donation\n- Rest for 10-15 minutes\n- Drink plenty of fluids\n- Eat light snacks\n\n2. Next 24 Hours\n- Avoid heavy lifting\n- Stay hydrated\n- Eat iron-rich foods',
-            'Recovery Guidelines:\n- Drink extra fluids\n- Eat well-balanced meals\n- Avoid strenuous activities\n- Keep bandage on\n- Rest if feeling tired\n- Avoid alcohol',
-            'What to Expect:\n- Possible mild fatigue\n- Slight bruising at needle site\n- Quick recovery for most donors\n- Body rapidly replaces donated blood'
-        ]
-    },
-    {
-        id: 'platform_info',
-        patterns: [
-            'about bloodbridge', 'how does bloodbridge work', 
-            'bloodbridge mission', 'platform information'
-        ],
-        responses: [
-            'About BloodBridge:\n- Connecting donors and recipients\n- Streamlined blood donation process\n- Free health screenings\n- Community-focused platform\n- Saving lives through technology',
-            'BloodBridge Mission:\n- Simplify blood donation\n- Increase blood supply\n- Save lives\n- Provide education\n- Build a supportive donor community',
-            'Our Platform:\n- Easy registration\n- Comprehensive health screening\n- Appointment scheduling\n- Educational resources\n- Donor tracking and support'
-        ]
-    },
-    {
-        id: 'special_donations',
-        patterns: [
-            'types of donation', 'different donation methods',
-            'platelet donation', 'plasma donation', 
-            'what can i donate besides whole blood'
-        ],
-        responses: [
-            'Donation Types:\n1. Whole Blood\n- Most common\n- Takes 10-15 minutes\n\n2. Platelet Donation\n- Helps cancer patients\n- Takes 2-3 hours\n\n3. Plasma Donation\n- Creates medical products\n- Can donate more frequently',
-            'Specialized Donation Methods:\n- Whole Blood\n- Platelet Donation\n- Plasma Donation\n- Double Red Cell Donation\n\nEach type supports different medical needs',
-            'Beyond Whole Blood:\n- Platelets for cancer treatments\n- Plasma for medical products\n- Double red cell donation\n- Each type saves lives differently'
-        ]
-    }
+  {
+    tag: 'greeting',
+    patterns: [
+      'hi', 'hello', 'hey', 'yo', 'sup', 'howdy', 'hey there', 'hi there', 'greetings', 'good day', 'good morning', 'good evening', 'hello there',
+      'hiya', 'heya', 'helloo', 'hellooo', 'yo!', 'hi!', 'hello!', 'hey!', 'hey assistant', 'hi assistant', 'hey bot', 'hi bot', 'hi ai',
+      'what’s up', 'what up', 'wassup', 'how are you', 'how r u', 'hw r u', 'anyone there?', 'u there?', 'bot are you there?', 'hello ai',
+      'hey bro', 'hey dude', 'hey bloodbridge', 'hello bloodbridge', 'are you there', 'are you online', 'hey friend', 'yo bot', 'how is it going',
+      'is anyone here', 'what’s happening', 'holla', 'aloha', 'bonjour', 'hola', 'namaste', 'salut', 'salaam', 'hiya buddy'
+    ],
+    responses: [
+      'Hey there! How can I assist you with blood donation today?',
+      'Hello! Need any help regarding blood donation?',
+      'Hi! I’m here to help you with any questions about BloodBridge.',
+      'Hi there! How can I support your donation journey today?',
+      'Greetings! Ready to make a difference?'
+    ]
+  },
+  {
+    tag: 'goodbye',
+    patterns: [
+      'bye', 'see you later', 'goodbye', 'see ya', 'farewell', 'take care', 'bye bye', 'catch you later',
+      'talk to you later', 'cya', 'gotta go', 'see you soon', 'I’m out', 'see you around', 'peace out', 'later bro', 'later dude', 'adios',
+      'ciao', 'see you next time', 'thanks, bye', 'okay bye', 'bye now', 'I’ll go now', 'logging off', 'quitting', 'exiting', 'exit',
+      'close', 'disconnect', 'end chat'
+    ],
+    responses: [
+      'Goodbye! Feel free to reach out again.',
+      'Take care! Donate blood, save lives.',
+      'Bye! Let me know if you need anything else.',
+      'Thanks for visiting BloodBridge. See you soon!'
+    ]
+  },
+  {
+    tag: 'thanks',
+    patterns: [
+      'thanks', 'thank you', 'thanks a lot', 'thanks so much', 'thx', 'thank u', 'ty', 'many thanks',
+      'appreciate it', 'thanks a ton', 'thanks buddy', 'thank you so much', 'thank you very much',
+      'I appreciate it', 'big thanks', 'I’m grateful', 'thanks a bunch', 'thaaaanks', 'thanks!!', 'thank you!',
+      'cheers', 'bless you', 'thanks again'
+    ],
+    responses: [
+      'You’re welcome!',
+      'No problem at all.',
+      'Glad I could help!',
+      'Anytime! Let me know if you have more questions.',
+      'Always happy to assist!'
+    ]
+  },
+  {
+    tag: 'noanswer',
+    patterns: [],
+    responses: [
+      'I’m not sure how to respond to that. Try asking something about blood donation or our services.',
+      'Sorry, I didn’t understand that. Could you rephrase?',
+      'Hmm, I don’t have an answer for that. Ask me about blood donation, programs, or chat system.',
+      'Can you please clarify your question?'
+    ]
+  },
+  {
+    tag: 'donor_register',
+    patterns: [
+      'I want to register as a donor', 'how do I become a donor', 'register me as a blood donor',
+      'sign up to donate blood', 'donor registration', 'how to sign up as donor', 'become a donor',
+      'donate blood registration', 'I want to donate blood', 'help me register as a donor',
+      'start donating blood', 'I want to be a donor', 'how do I register to give blood', 'how to join as a donor'
+    ],
+    responses: [
+      'To register as a donor, please visit the donor registration page and fill out your details.',
+      'Great to hear you want to donate! Head to the donor signup section to get started.',
+      'You can become a blood donor by completing the registration form on our site.',
+      'Visit our Donor page and click on "Register" to start donating blood!'
+    ]
+  },
+  {
+    tag: 'receiver_register',
+    patterns: [
+      'I need blood', 'how can I receive blood', 'receiver registration', 'I want to register to get blood',
+      'how to get blood', 'register as receiver', 'how do I ask for blood', 'blood request',
+      'register to receive blood', 'I need a blood transfusion', 'get me blood', 'blood needed',
+      'emergency blood', 'apply for blood', 'ask for blood'
+    ],
+    responses: [
+      'To request blood, please register as a receiver on our platform.',
+      'You can receive blood by filling out the receiver registration form.',
+      'Head to our Receiver section and sign up to request blood.',
+      'Please go to the receiver registration page to begin your request.'
+    ]
+  },
+  {
+    tag: 'chat_help',
+    patterns: [
+      'how does the chat system work', 'can I talk to a donor', 'how can I chat with someone',
+      'chat with donor', 'chat with receiver', 'talk to someone', 'connect with donor',
+      'connect with receiver', 'chatting system', 'how to message donor', 'message receiver',
+      'can I send message', 'where is the chat', 'how to contact donor', 'how do I talk to someone'
+    ],
+    responses: [
+      'Our chat system allows receivers and donors to communicate after matching.',
+      'Once matched, you’ll see a chat option in your dashboard.',
+      'To start a chat, go to your messages section after logging in.',
+      'You can connect with others using our built-in chat feature after registration.'
+    ]
+  },
+  {
+    tag: 'donation_programs',
+    patterns: [
+      'tell me about donation programs', 'what programs are there', 'blood donation events',
+      'any campaigns going on', 'upcoming blood drives', 'current donation programs',
+      'what are your donation events', 'is there a donation drive', 'blood camp info',
+      'donation campaign details', 'available programs', 'program information',
+      'do you have programs', 'which events are active'
+    ],
+    responses: [
+      'Our donation programs include regular blood drives, awareness campaigns, and emergency donation calls.',
+      'Visit our Donation Programs page to see current and upcoming events.',
+      'We regularly organize donation drives—check our homepage for updates.',
+      'You can view and join active donation campaigns through the Donation section.'
+    ]
+  },
+  {
+    tag: 'donation_process',
+    patterns: [
+      'how to donate', 'how do i donate', 'donation process', 'steps to donate',
+      'how do i donate blood', 'how can i give blood', 'how can i donate blood',
+      'process of donating blood', 'how blood donation works', 'donating blood steps',
+      'what happens when you donate blood', 'blood donation process explained',
+      'can you explain how to donate', 'guide to donating blood', 'step by step donation',
+      'how does donating blood work', 'walk me through donation process',
+      'i want to donate blood what should i do', 'what are the steps to donate blood',
+      'what is the process of giving blood', 'procedure to donate blood', 'how blood donation is done',
+      'explain the blood donation process', 'instructions to donate blood',
+      'complete blood donation procedure', 'donation steps in detail',
+      'i want to give blood what are the steps', 'donation method', 'donating instructions',
+      'blood donation full process', 'how to begin blood donation',
+      'how does the donation procedure work', 'can you tell me the donation process',
+      'i want to understand the donation process', 'how do people donate blood',
+      'what to do before donating', 'can you guide me through donating',
+      'walk me through how to donate blood', 'how do you give blood', 'what should i do to donate blood',
+      'how do i go about donating blood', 'where to start with blood donation',
+      'can i donate blood and how', 'how can someone donate blood', 'how can i register to donate blood',
+      'is there a process for donating blood', 'steps involved in giving blood',
+      'please explain donation process', 'what is involved in donating blood',
+      'can you walk me through blood donation', 'explain how donating blood works',
+      'how do i start donating blood', 'what is the procedure to donate blood',
+      'what do i do to donate blood', 'can you help me with blood donation process',
+      'guide me on donating blood'
+    ],
+    responses: [
+      'To donate blood, you need to register, complete a health check, donate the blood, and then rest for a while.',
+      'The process involves registration, screening, donation, and recovery. It usually takes about 30-45 minutes.',
+      'First, you register and provide your health info, then the staff collects blood safely, and you get some rest afterward.',
+      'Donation is simple: sign up, answer some health questions, give blood, and relax for a few minutes.'
+    ]
+  },
+  {
+    tag: 'eligibility',
+    patterns: [
+      'am i eligible to donate', 'who can donate blood', 'donation eligibility',
+      'can i donate blood', 'requirements to donate', 'criteria for blood donation',
+      'eligibility to give blood', 'can anyone donate', 'rules for donation',
+      'blood donation requirements', 'what are the eligibility criteria',
+      'who is allowed to donate blood', 'can a person donate blood',
+      'what is needed to donate blood', 'conditions for donating blood',
+      'are there restrictions to donate', 'can i qualify to donate blood',
+      'minimum requirements for blood donation', 'age limit for donating blood',
+      'health conditions for donation', 'can i donate if i am sick',
+      'can i donate blood if i have a disease', 'donation qualifications',
+      'who cannot donate blood', 'eligibility criteria for blood donors',
+      'who can be a donor', 'do i meet donation requirements',
+      'can i donate now', 'can i donate if i have a cold',
+      'can i donate if i took medicine', 'can i donate blood with anemia',
+      'what disqualifies me from donating blood', 'can i donate blood with diabetes',
+      'can i donate if i have high blood pressure'
+    ],
+    responses: [
+      'You must be healthy, at least 18 years old, and meet weight requirements to donate blood.',
+      'Eligibility includes being between 18-65 years, feeling well, and not having certain medical conditions.',
+      'Please ensure you meet health criteria, including no recent illnesses or risky behaviors, before donating.',
+      'Check the eligibility guidelines on our site for full details before donating.'
+    ]
+  },
+  {
+    tag: 'benefits',
+    patterns: [
+      'what are benefits of donating blood', 'why donate blood', 'advantages of blood donation',
+      'why should i donate blood', 'blood donation benefits', 'how does blood donation help',
+      'good reasons to donate blood', 'is donating blood beneficial', 'health benefits of blood donation',
+      'benefits for donor', 'does donating blood help health',
+      'how does donating blood benefit me', 'what good comes from donating blood',
+      'benefits after donating blood', 'blood donation advantages',
+      'how is donating blood helpful', 'positive effects of blood donation',
+      'why is blood donation important', 'reasons to donate blood',
+      'can donating blood improve health', 'can i benefit from donating blood',
+      'does blood donation improve health', 'advantages to donating blood',
+      'why blood donation is good', 'how does giving blood help',
+      'does donating blood help society', 'how does blood donation save lives'
+    ],
+    responses: [
+      'Donating blood helps save lives and can improve your health by stimulating blood cell production.',
+      'You get the satisfaction of saving lives, and your body benefits from the renewal process after donation.',
+      'Regular blood donation supports your cardiovascular health and reduces harmful iron levels.',
+      'Blood donation is a selfless act that contributes to community health and may lower your risk of certain diseases.'
+    ]
+  },
+  {
+    tag: 'frequency',
+    patterns: [
+      'how often can i donate blood', 'donation frequency', 'how frequently to donate',
+      'how many times can i donate', 'can i donate every month', 'how often is donation allowed',
+      'blood donation intervals', 'when can i donate again', 'donate blood often',
+      'how many donations per year', 'frequency of blood donation',
+      'how soon can i donate again', 'how many times in a year can i donate',
+      'how much time between donations', 'time gap between donations',
+      'what is donation frequency', 'how often to give blood',
+      'how frequently can someone donate blood', 'donation limits',
+      'minimum gap between donations', 'maximum number of donations per year'
+    ],
+    responses: [
+      'You can donate whole blood every 8 weeks (56 days). Other types may have different intervals.',
+      'Typically, donors can give blood up to 6 times a year, depending on health and blood type.',
+      'It is recommended to wait at least 8 weeks between whole blood donations.',
+      'Please follow guidelines and wait the specified period before donating again to keep safe.'
+    ]
+  },
+  {
+    tag: 'aftercare',
+    patterns: [
+      'what to do after donating blood', 'post donation care', 'after donating blood',
+      'care after blood donation', 'how to recover after donation', 'what happens after donating',
+      'blood donation recovery', 'after blood donation instructions', 'tips after donation',
+      'care tips post donation', 'how to feel better after donating',
+      'what to expect after donation', 'blood donation side effects', 'recovering from donation',
+      'after donation advice', 'how to take care after donating blood'
+    ],
+    responses: [
+      'After donating, rest for 10-15 minutes and drink plenty of fluids.',
+      'Avoid heavy exercise for the rest of the day and eat a healthy meal.',
+      'If you feel dizzy, sit down and raise your feet. Inform staff if you feel unwell.',
+      'Take it easy for the day, and keep the bandage on for a few hours.'
+    ]
+  },
+  {
+    tag: 'donation_locations',
+    patterns: [
+      'where can i donate blood', 'blood donation centers', 'donation locations',
+      'nearest blood bank', 'blood donation places near me', 'where to donate blood',
+      'donation sites', 'blood banks nearby', 'donation camps near me',
+      'where are donation centers', 'how to find blood donation place',
+      'locations to donate blood', 'nearest donation center'
+    ],
+    responses: [
+      'You can find donation centers on our Locations page or by using the map on our site.',
+      'Visit local hospitals and blood banks to donate blood.',
+      'We regularly organize donation camps in many cities—check our events page for updates.',
+      'Use the search feature on our site to find the nearest donation location.'
+    ]
+  },
+  {
+    tag: 'donation_eligibility_conditions',
+    patterns: [
+      'what conditions affect eligibility', 'who cannot donate blood',
+      'disqualifications for donation', 'conditions preventing donation',
+      'health issues that stop donation', 'when not to donate blood',
+      'medical reasons to avoid donation', 'can i donate if sick',
+      'illnesses that disqualify donors', 'health problems stopping donation',
+      'when am i not eligible to donate'
+    ],
+    responses: [
+      'Certain illnesses, recent surgeries, and risky behaviors may make you ineligible to donate.',
+      'If you have certain infections, recent travel history, or chronic conditions, you may not qualify.',
+      'Please consult with our staff or your doctor to confirm eligibility before donating.',
+      'Review the full eligibility list on our website to ensure you qualify.'
+    ]
+  },
+  {
+    tag: 'blood_types',
+    patterns: [
+      'what are blood types', 'blood group types', 'different blood types',
+      'explain blood types', 'types of blood', 'blood classification',
+      'how many blood types are there', 'which blood type is universal donor',
+      'what blood types can donate to me', 'blood compatibility'
+    ],
+    responses: [
+      'There are four main blood types: A, B, AB, and O, each can be positive or negative.',
+      'Type O negative is the universal donor type.',
+      'Blood type compatibility is important for safe transfusions.',
+      'You can learn more about blood types on our educational page.'
+    ]
+  },
+  {
+    tag: 'blood_donation_facts',
+    patterns: [
+      'interesting facts about blood donation', 'blood donation facts',
+      'did you know about blood donation', 'facts about donating blood',
+      'important blood donation information'
+    ],
+    responses: [
+      'Did you know one donation can save up to three lives?',
+      'Blood cannot be manufactured; donation is the only source.',
+      'Only about 3% of eligible donors give blood yearly.',
+      'Blood donation is safe and takes about 10 minutes.'
+    ]
+  },
+  {
+    tag: 'donor_rights',
+    patterns: [
+      'what are donor rights', 'rights of blood donors', 'donor protections',
+      'what can donors expect', 'donor privacy', 'donor safety',
+      'how are donors protected', 'rights during donation'
+    ],
+    responses: [
+      'Donors have the right to privacy, informed consent, and safe donation procedures.',
+      'Your health information is confidential and protected.',
+      'You can ask questions and withdraw consent at any time.',
+      'Our staff ensures a safe and comfortable donation experience.'
+    ]
+  },
+
+  {
+  tag: 'system_guide',
+  patterns: [
+    'where do i donate blood in this app',
+    'how to donate blood in this system',
+    'guide me to donate blood here',
+    'how do i use this app to donate',
+    'what steps to donate blood using this app',
+    'help me donate blood in app',
+    'where is the donation section',
+    'how do i find donation centers in this app'
+  ],
+  responses: [
+    'To donate blood using this app, please go to the "Donation Centers" section from the main menu, select a nearby center, and follow the registration steps.',
+    'You can donate blood by navigating to the "Donation Centers" page, choosing a location, and booking your appointment through the app.',
+    'Use the "Donation Centers" tab on the main screen to find locations and register for blood donation.',
+    'Start by clicking on "Donation Centers" in the app menu to find where you can donate blood near you.'
+  ]
+}
+
 ];
+
+
+
+
+
 
     function findBestMatch(userMessage) {
         const lowercaseMessage = userMessage.toLowerCase();
