@@ -24,7 +24,7 @@ class User(UserMixin, db.Model):
     # 2FA fields
     totp_secret = db.Column(db.String(32))
     totp_enabled = db.Column(db.Boolean, default=False)
-    
+
     # Donor verification fields
     is_verified = db.Column(db.Boolean, default=False)
     verification_status = db.Column(db.String(20), default='unverified')  # 'unverified', 'pending', 'approved', 'rejected'
@@ -53,28 +53,28 @@ class User(UserMixin, db.Model):
         """Generate a new TOTP secret"""
         self.totp_secret = pyotp.random_base32()
         return self.totp_secret
-        
+
     def can_donate(self):
         """Check if user is eligible to donate based on verification and last donation date"""
         if not self.is_verified or self.verification_status != 'approved':
             return False, "You need to complete the verification process before donating."
-            
+
         if self.next_eligible_date and self.next_eligible_date > datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0):
             return False, f"You are not eligible to donate until {self.next_eligible_date.strftime('%Y-%m-%d')}."
-            
+
         return True, "You are eligible to donate blood."
-        
+
     def get_full_name(self):
         """Get user's full name"""
         return f"{self.first_name} {self.last_name}"
-    
+
     def generate_password_reset_token(self):
         """Generate a new password reset token for the user"""
         # Invalidate any existing tokens
         for token in self.password_resets:
             if not token.used and datetime.utcnow() < token.expires_at:
                 token.invalidate()
-        
+
         # Create a new token
         reset = PasswordReset(user_id=self.id)
         db.session.add(reset)
@@ -127,10 +127,10 @@ class DonorVerification(db.Model):
     reviewer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     review_date = db.Column(db.DateTime)
     review_notes = db.Column(db.Text)
-    
+
     # Health questionnaire responses stored as JSON
     questionnaire_responses = db.Column(db.Text)  # Stored as JSON
-    
+
     # Relationships
     donor = db.relationship('User', foreign_keys=[donor_id], backref='verifications')
     reviewer = db.relationship('User', foreign_keys=[reviewer_id])
@@ -142,14 +142,14 @@ class PasswordReset(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
-    
+
     # Relationship
     user = db.relationship('User', backref='password_resets')
-    
+
     def __init__(self, user_id, expires_in=24):
         """
         Initialize a new password reset token
-        
+
         Args:
             user_id: The ID of the user requesting the password reset
             expires_in: Hours until the token expires (default: 24)
@@ -159,11 +159,11 @@ class PasswordReset(db.Model):
         self.created_at = datetime.utcnow()
         self.expires_at = self.created_at + timedelta(hours=expires_in)
         self.used = False
-    
+
     def is_valid(self):
         """Check if the token is valid (not expired and not used)"""
         return not self.used and datetime.utcnow() < self.expires_at
-    
+
     def invalidate(self):
         """Mark the token as used"""
         self.used = True
@@ -175,7 +175,7 @@ class AdminActionLog(db.Model):
     target_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     admin = db.relationship('User', foreign_keys=[admin_id])
     target_user = db.relationship('User', foreign_keys=[target_user_id])
@@ -203,10 +203,10 @@ class Notification(db.Model):
     link = db.Column(db.String(200))  # Optional link for the notification
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationship
     user = db.relationship('User', backref='notifications')
-    
+
     @staticmethod
     def create_notification(user_id, title, message, type='info', link=None):
         """Helper method to create a new notification"""
@@ -221,31 +221,7 @@ class Notification(db.Model):
         db.session.commit()
         return notification
 
-class ChatSession(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    donor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    donor = db.relationship('User', foreign_keys=[donor_id], backref='donor_chats')
-    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='receiver_chats')
-    messages = db.relationship('Message', backref='chat_session', lazy='dynamic')
 
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    chat_session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    attachment_url = db.Column(db.String(500))  # For file/image sharing
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    sender = db.relationship('User', backref='sent_messages')
-    
-    pass
 # Add this to your models.py file
 
 class DonationProgram(db.Model):
@@ -264,26 +240,26 @@ class DonationProgram(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_public = db.Column(db.Boolean, default=True)
-    
+
     # Relationships
     creator = db.relationship('User', foreign_keys=[created_by])
     registrations = db.relationship('ProgramRegistration', backref='program', lazy='dynamic')
-    
+
     def get_registration_count(self):
         """Get the number of donors registered for this program"""
         return ProgramRegistration.query.filter_by(program_id=self.id).count()
-    
+
     def is_registered(self, user_id):
         """Check if a user is registered for this program"""
         return ProgramRegistration.query.filter_by(
-            program_id=self.id, 
+            program_id=self.id,
             donor_id=user_id
         ).first() is not None
-    
+
     def has_space_available(self):
         """Check if the program has space for more donors"""
         return self.get_registration_count() < self.max_donors
-    
+
     def update_donor_count(self):
         """Update the current donor count"""
         self.current_donors = self.get_registration_count()
@@ -296,10 +272,10 @@ class ProgramRegistration(db.Model):
     registration_date = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='registered')  # 'registered', 'checked_in', 'donated', 'no_show', 'cancelled'
     notes = db.Column(db.Text)
-    
+
     # Relationships
     donor = db.relationship('User', backref='program_registrations')
-    
+
     # Make sure each donor can only register once for each program
     __table_args__ = (db.UniqueConstraint('program_id', 'donor_id', name='unique_program_registration'),)
 
@@ -309,16 +285,16 @@ class BloodInventory(db.Model):
     blood_type = db.Column(db.String(5), nullable=False)
     units = db.Column(db.Integer, nullable=False, default=0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Threshold levels for alerts
     critical_level = db.Column(db.Integer, default=10)
     low_level = db.Column(db.Integer, default=30)
-    
+
     @classmethod
     def get_inventory_status(cls):
         """Get the status of all blood types in inventory"""
         inventory = cls.query.all()
-        
+
         result = {}
         for item in inventory:
             if item.units <= item.critical_level:
@@ -327,7 +303,7 @@ class BloodInventory(db.Model):
                 status = 'low'
             else:
                 status = 'normal'
-                
+
             result[item.blood_type] = {
                 'units': item.units,
                 'status': status,
@@ -335,28 +311,28 @@ class BloodInventory(db.Model):
                 'low_level': item.low_level,
                 'last_updated': item.last_updated
             }
-            
+
         return result
-    
+
     @classmethod
     def update_inventory(cls, blood_type, units_change):
         """Update inventory for a specific blood type"""
         inventory_item = cls.query.filter_by(blood_type=blood_type).first()
-        
+
         if not inventory_item:
             inventory_item = cls(blood_type=blood_type, units=0)
             db.session.add(inventory_item)
-        
+
         # Update units (don't allow negative values)
         inventory_item.units = max(0, inventory_item.units + units_change)
-        
+
         # Check if alert is needed
         alert_needed = False
         if inventory_item.units <= inventory_item.critical_level:
             alert_needed = 'critical'
         elif inventory_item.units <= inventory_item.low_level:
             alert_needed = 'low'
-            
+
         db.session.commit()
-        
+
         return inventory_item, alert_needed

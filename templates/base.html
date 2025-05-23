@@ -73,17 +73,9 @@
                             </a>
                         </li>
                         {% endif %}
-                        
+
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('blood_requests') }}">Blood Requests</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('chat.chat_list') }}">
-                                Chat
-                                {% if unread_messages_count > 0 %}
-                                    <span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>
-                                {% endif %}
-                            </a>
                         </li>
                     {% endif %}
                     <li class="nav-item dropdown">
@@ -197,289 +189,9 @@
 
         {% block content %}{% endblock %}
     </main>
-<!-- Chatbot Container -->
-<div id="chatbot-container" class="chatbot-container">
-    <div class="chatbot-window" id="chatbot-window" style="display: none;">
-        <div class="chatbot-header">
-            <div class="chatbot-title">
-                <i class="fas fa-robot me-2"></i>
-                BloodBridge AI Assistant
-            </div>
-            <button id="close-chatbot" class="close-btn">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="chatbot-messages" id="chatbot-messages">
-            <div class="message bot welcome-message">
-                <p>Welcome to BloodBridge AI Assistant! I'm here to help you with blood donation information.</p>
-                <div class="quick-suggestions">
-                    <button class="quick-suggestion">Donation Process</button>
-                    <button class="quick-suggestion">Eligibility</button>
-                    <button class="quick-suggestion">Benefits</button>
-                </div>
-            </div>
-        </div>
-        <div class="chatbot-input">
-            <input 
-                type="text" 
-                id="chatbot-input"
-                placeholder="Ask me about blood donation..."
-            />
-            <button id="send-message">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-    <button id="toggle-chatbot" class="chatbot-toggle-btn">
-        <i class="fas fa-comment-medical"></i>
-        <span class="chatbot-badge" id="chatbot-new-message-badge" style="display: none;">1</span>
-    </button>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('toggle-chatbot');
-    const closeBtn = document.getElementById('close-chatbot');
-    const chatbotWindow = document.getElementById('chatbot-window');
-    const messagesContainer = document.getElementById('chatbot-messages');
-    const inputField = document.getElementById('chatbot-input');
-    const sendBtn = document.getElementById('send-message');
-    const newMessageBadge = document.getElementById('chatbot-new-message-badge');
 
-    // Expanded intents with comprehensive responses
-    const expandedIntents = [
-    {
-        id: 'greeting',
-        patterns: [
-            'hi', 'hello', 'hey', 'greetings', 'howdy', 'what\'s up', 
-            'good morning', 'good afternoon', 'good evening'
-        ],
-        responses: [
-            'Hello! I\'m the BloodBridge AI Assistant. How can I help you today?',
-            'Hi there! I\'m ready to assist you with blood donation information.',
-            'Greetings! What questions do you have about donating blood?',
-            'Welcome to BloodBridge! I\'m here to help you save lives through blood donation.',
-            'Hello! Interested in making a difference? Let\'s talk about blood donation.'
-        ]
-    },
-    {
-        id: 'donation_process',
-        patterns: [
-            'how to donate', 'donation process', 'steps to donate','donation process', 
-            'how do i donate', 'blood donation procedure',
-            'what happens during donation'
-        ],
-        responses: [
-            'Blood Donation Process:\n1. Registration\n2. Medical History & Mini-Physical\n3. Donation (10-15 minutes)\n4. Recovery & Refreshments\n\nTotal time: About 1-2 hours',
-            'Donation Steps:\n- Check online eligibility\n- Schedule appointment\n- Bring valid ID\n- Complete health questionnaire\n- Quick medical screening\n- Donate blood\n- Rest and enjoy complimentary snacks',
-            'What to Expect:\n- Warm welcome by staff\n- Private medical review\n- Comfortable donation chair\n- Sterile, safe environment\n- Post-donation care and refreshments'
-        ]
-    },
-    {
-        id: 'eligibility',
-        patterns: [
-            'who can donate', 'am i eligible', 'donation requirements', 
-            'can i donate blood', 'eligibility criteria','eligibility',
-            'restrictions on donation'
-        ],
-        responses: [
-            'Basic Eligibility Requirements:\n- Age: 17-65 years\n- Weight: At least 110 pounds\n- Good general health\n- No recent blood donations\n- No certain medical conditions',
-            'Donation Eligibility Factors:\n1. Age: Minimum 17 (16 with parental consent)\n2. Health: No active infections\n3. Weight: Over 110 pounds\n4. No recent travel to high-risk areas\n5. Not taking certain medications',
-            'Key Considerations:\n- Recent illness\n- Chronic conditions\n- Medication use\n- Travel history\n- Overall physical health'
-        ]
-    },
-    {
-        id: 'medical_conditions',
-        patterns: [
-            'medical conditions and donation', 'can i donate with',
-            'health issues and blood donation', 'medical restrictions',
-            'disqualifying health conditions'
-        ],
-        responses: [
-            'Medical Conditions Affecting Donation:\n- Cannot donate if you have:\n  * HIV/AIDS\n  * Hepatitis B or C\n  * Active cancer\n  * Certain heart conditions\n- Temporary deferrals for:\n  * Recent illness\n  * Some medications\n  * Recent travel',
-            'Health Screening Considerations:\n1. Chronic Conditions\n- Diabetes (if controlled)\n- High blood pressure (if managed)\n- Some autoimmune conditions\n\n2. Medication Impacts\n- Some medications may temporarily disqualify you\n- Consult medical staff for specific guidance',
-            'Donation and Health:\n- Individual assessment is key\n- Medical staff will review your specific situation\n- Honesty about health history is crucial'
-        ]
-    },
-    {
-        id: 'benefits',
-        patterns: [
-            'why donate', 'benefits of donation', 'importance of blood donation', 
-            'how does donation help', 'why is blood donation important','benefits',
-            'impact of donating'
-        ],
-        responses: [
-            'Impact of Blood Donation:\n- Saves up to 3 lives per donation\n- Critical for emergency treatments\n- Supports:\n  * Cancer patients\n  * Surgical procedures\n  * Chronic illness management\n- Provides free health screening',
-            'Donation Benefits:\n1. Medical Impact\n- Emergency surgeries\n- Trauma care\n- Cancer treatments\n\n2. Personal Benefits\n- Free health check-up\n- Potential early disease detection\n- Feeling of making a difference',
-            'Why Donate?\n- Community health support\n- Immediate life-saving potential\n- Personal health insights\n- No cost to you\n- Feeling of heroism'
-        ]
-    },
-    {
-        id: 'blood_types',
-        patterns: [
-            'what blood types', 'blood type compatibility', 'blood types',
-            'who can i donate to', 'universal donor', 'universal recipient'
-        ],
-        responses: [
-            'Blood Type Compatibility:\n- O-: Universal donor (can donate to all)\n- AB+: Universal recipient (can receive from all)\n- A+: Can donate to A+ and AB+\n- B+: Can donate to B+ and AB+\n- O+: Can donate to A+, B+, AB+, O+',
-            'Blood Type Donation Guide:\n1. Universal Donor (O-)\n- Rarest type\n- Can donate to ALL blood types\n\n2. Universal Recipient (AB+)\n- Can receive from ALL blood types\n- Least common type',
-            'Blood Type Facts:\n- 8 different blood types\n- Each type has unique donation capabilities\n- Blood banks need all types\n- Your type matters in donation'
-        ]
-    },
-    {
-        id: 'frequency',
-        patterns: [
-            'how often can i donate', 'donation frequency', 
-            'time between donations', 'how many times a year'
-        ],
-        responses: [
-            'Donation Frequency Guidelines:\n- Whole Blood: Every 56 days\n- Platelets: Every 7 days, up to 24 times a year\n- Plasma: Every 28 days, up to 13 times a year',
-            'Donation Intervals:\n1. Whole Blood\n- Minimum: 8 weeks between donations\n- Allows body to replenish red blood cells\n\n2. Special Donations\n- Platelets: More frequent\n- Plasma: More frequent than whole blood',
-            'Donation Limits:\n- Whole Blood: 6 times per year\n- Platelets: Up to 24 times\n- Plasma: Up to 13 times\n- Individual health determines exact eligibility'
-        ]
-    },
-    {
-        id: 'preparation',
-        patterns: [
-            'how to prepare for donation', 'what should i do before donating',
-            'preparation for blood donation', 'tips before donating'
-        ],
-        responses: [
-            'Preparing for Donation:\n1. Hydration\n- Drink plenty of water\n- Avoid alcohol\n\n2. Nutrition\n- Eat iron-rich foods\n- Have a healthy meal\n- Avoid fatty foods\n\n3. Rest\n- Get good sleep\n- Avoid strenuous exercise',
-            'Pre-Donation Checklist:\n- Drink 16 oz water before donation\n- Eat iron-rich foods\n- Get 7-9 hours of sleep\n- Wear comfortable clothing\n- Bring valid ID\n- Know medical history',
-            'What to Do Before Donating:\n- Stay hydrated\n- Eat balanced meals\n- Get adequate rest\n- Wear comfortable clothes\n- Bring identification\n- Be prepared for quick medical screening'
-        ]
-    },
-    {
-        id: 'after_donation',
-        patterns: [
-            'what to do after donating', 'post donation care',
-            'recovery after blood donation', 'side effects'
-        ],
-        responses: [
-            'Post-Donation Care:\n1. Immediate After-Donation\n- Rest for 10-15 minutes\n- Drink plenty of fluids\n- Eat light snacks\n\n2. Next 24 Hours\n- Avoid heavy lifting\n- Stay hydrated\n- Eat iron-rich foods',
-            'Recovery Guidelines:\n- Drink extra fluids\n- Eat well-balanced meals\n- Avoid strenuous activities\n- Keep bandage on\n- Rest if feeling tired\n- Avoid alcohol',
-            'What to Expect:\n- Possible mild fatigue\n- Slight bruising at needle site\n- Quick recovery for most donors\n- Body rapidly replaces donated blood'
-        ]
-    },
-    {
-        id: 'platform_info',
-        patterns: [
-            'about bloodbridge', 'how does bloodbridge work', 
-            'bloodbridge mission', 'platform information'
-        ],
-        responses: [
-            'About BloodBridge:\n- Connecting donors and recipients\n- Streamlined blood donation process\n- Free health screenings\n- Community-focused platform\n- Saving lives through technology',
-            'BloodBridge Mission:\n- Simplify blood donation\n- Increase blood supply\n- Save lives\n- Provide education\n- Build a supportive donor community',
-            'Our Platform:\n- Easy registration\n- Comprehensive health screening\n- Appointment scheduling\n- Educational resources\n- Donor tracking and support'
-        ]
-    },
-    {
-        id: 'special_donations',
-        patterns: [
-            'types of donation', 'different donation methods',
-            'platelet donation', 'plasma donation', 
-            'what can i donate besides whole blood'
-        ],
-        responses: [
-            'Donation Types:\n1. Whole Blood\n- Most common\n- Takes 10-15 minutes\n\n2. Platelet Donation\n- Helps cancer patients\n- Takes 2-3 hours\n\n3. Plasma Donation\n- Creates medical products\n- Can donate more frequently',
-            'Specialized Donation Methods:\n- Whole Blood\n- Platelet Donation\n- Plasma Donation\n- Double Red Cell Donation\n\nEach type supports different medical needs',
-            'Beyond Whole Blood:\n- Platelets for cancer treatments\n- Plasma for medical products\n- Double red cell donation\n- Each type saves lives differently'
-        ]
-    }
-];
 
-    function findBestMatch(userMessage) {
-        const lowercaseMessage = userMessage.toLowerCase();
-        
-        // Find best matching intent
-        const matches = expandedIntents.filter(intent => 
-            intent.patterns.some(pattern => 
-                lowercaseMessage.includes(pattern.toLowerCase())
-            )
-        );
-
-        // Return a random response from the best match
-        if (matches.length > 0) {
-            const bestMatch = matches[0];
-            return bestMatch.responses[Math.floor(Math.random() * bestMatch.responses.length)];
-        }
-
-        // Fallback responses for unknown queries
-        const fallbackResponses = [
-            'I\'m not sure I completely understand. Could you rephrase that?',
-            'That\'s an interesting question. Could you provide more context about blood donation?',
-            'I can help with questions about blood donation. Could you be more specific?'
-        ];
-
-        return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-    }
-
-    function addMessage(text, sender) {
-        const messageEl = document.createElement('div');
-        messageEl.classList.add('message', sender);
-        messageEl.textContent = text;
-        
-        messagesContainer.appendChild(messageEl);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-        // Show new message badge when chatbot is closed
-        if (chatbotWindow.style.display === 'none' && sender === 'bot') {
-            newMessageBadge.style.display = 'block';
-        }
-    }
-
-    function sendMessage() {
-        const message = inputField.value.trim();
-        if (!message) return;
-
-        // Add user message
-        addMessage(message, 'user');
-        
-        // Generate bot response
-        const botResponse = findBestMatch(message);
-        
-        // Clear input
-        inputField.value = '';
-        
-        // Add bot response with a slight delay
-        setTimeout(() => {
-            addMessage(botResponse, 'bot');
-        }, 500);
-    }
-
-    // Quick suggestion buttons
-    document.querySelectorAll('.quick-suggestion').forEach(btn => {
-        btn.addEventListener('click', () => {
-            inputField.value = btn.textContent;
-            sendMessage();
-        });
-    });
-
-    // Toggle chatbot visibility
-    toggleBtn.addEventListener('click', () => {
-        chatbotWindow.style.display = 'flex';
-        toggleBtn.style.display = 'none';
-        newMessageBadge.style.display = 'none';
-    });
-
-    // Close chatbot
-    closeBtn.addEventListener('click', () => {
-        chatbotWindow.style.display = 'none';
-        toggleBtn.style.display = 'block';
-    });
-
-    // Send message on button click
-    sendBtn.addEventListener('click', sendMessage);
-
-    // Send message on Enter key press
-    inputField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
-});
-</script>
     <footer class="footer py-4 bg-light mt-5">
         <div class="container">
             <div class="row">
@@ -554,35 +266,35 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="toast-body" id="toastMessage"></div>
         </div>
     </div>
-    
+
     <script>
     // Function to show a notification toast
     function showNotificationToast(title, message, type = 'info') {
         const toast = document.getElementById('notificationToast');
         const toastTitle = document.getElementById('toastTitle');
         const toastMessage = document.getElementById('toastMessage');
-        
+
         // Set content
         toastTitle.textContent = title;
         toastMessage.textContent = message;
-        
+
         // Remove existing color classes and add new one
         toast.className = 'toast';
         toast.classList.add('bg-light');
         toast.classList.add('border-' + type);
-        
+
         // Show the toast
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
     }
-    
+
     // Function to update notification badge
     function updateNotificationBadge(count) {
         const dropdown = document.getElementById('notificationDropdown');
         if (!dropdown) return;
-        
+
         let badge = dropdown.querySelector('.badge');
-        
+
         if (count > 0) {
             if (!badge) {
                 badge = document.createElement('span');
@@ -594,14 +306,14 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.remove();
         }
     }
-    
+
     // Example usage: Show a notification when a new blood request matches
     // showNotificationToast('Blood Request Match', 'A new blood request matches your blood type!', 'danger');
 
     // Handle mark all notifications read
     function markAllNotificationsRead(event) {
         event.preventDefault();
-        
+
         fetch('{{ url_for("mark_all_read") }}', {
             method: 'POST',
             headers: {
@@ -616,13 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.notification-item.unread').forEach(item => {
                     item.classList.remove('unread');
                 });
-                
+
                 // Update/remove notification badge
                 const badge = document.querySelector('#notificationDropdown .badge');
                 if (badge) {
                     badge.remove();
                 }
-                
+
                 // Hide the mark all read button
                 event.target.style.display = 'none';
             }
