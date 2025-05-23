@@ -32,7 +32,6 @@ A comprehensive web application for managing blood donations, connecting donors 
   - Activity logs
 
 - **Communication**
-  - Chat system
   - Notifications
   - Email alerts
 
@@ -102,7 +101,6 @@ blood_donation_system/
 - Verifications
 - Blood Inventory
 - Notifications
-- Chat Sessions
 - Impact Statistics
 - Testimonials
 - Admin Action Logs

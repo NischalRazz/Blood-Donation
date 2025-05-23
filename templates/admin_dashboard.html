@@ -36,7 +36,7 @@
                         </div>
                         <i class="fas fa-hand-holding-medical fa-3x"></i>
                     </div>
-                    <a href="{{ url_for('blood_requests') }}" class="btn btn-light btn-sm mt-3">View</a>
+                    <a href="{{ url_for('admin_blood_requests') }}" class="btn btn-light btn-sm mt-3">View</a>
                 </div>
             </div>
         </div>
@@ -77,7 +77,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Blood Requests</h5>
-                    <a href="{{ url_for('blood_requests') }}" class="btn btn-sm btn-outline-danger">View All</a>
+                    <a href="{{ url_for('admin_blood_requests') }}" class="btn btn-sm btn-outline-danger">View All</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -113,9 +113,8 @@
                                             {% else %}
                                                 <span class="badge bg-secondary">{{ request.status }}</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-danger">Review</button>
+                                        </td>                                        <td>
+                                            <a href="{{ url_for('admin_blood_requests') }}" class="btn btn-sm btn-outline-danger">Review</a>
                                         </td>
                                     </tr>
                                 {% else %}

@@ -13,7 +13,6 @@ import base64
 
 # Import blueprints
 from routes.donation_programs import donation_programs
-from routes.chat import chat
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -57,7 +56,7 @@ from flask_migrate import Migrate
 
 # Import these after initializing app
 from extensions import db
-from models import AdminActionLog, PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification, Message, ChatSession
+from models import AdminActionLog, PasswordReset, User, BloodRequest, Donation, DonorVerification, Testimonial, ImpactStat, Notification
 from utils import admin_required, calculate_blood_compatibility, donor_required, log_admin_action, receiver_required, format_verification_status, calculate_next_donation_date, validate_password_complexity
 
 # Initialize extensions
@@ -86,7 +85,6 @@ def internal_error(error):
 
 # Register blueprints
 app.register_blueprint(donation_programs)
-app.register_blueprint(chat)
 
 # Initialize blood inventory if empty
 def init_blood_inventory():
@@ -130,7 +128,7 @@ def save_file(file, subfolder):
         if not os.path.exists(upload_dir):
             logging.info(f"Creating directory: {upload_dir}")
             os.makedirs(upload_dir, exist_ok=True)
-        
+
         # Set directory permissions
         try:
             os.chmod(upload_dir, 0o777)
@@ -142,10 +140,10 @@ def save_file(file, subfolder):
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = f"{timestamp}_{filename}"
-        
+
         upload_path = os.path.join(upload_dir, filename)
         logging.info(f"Attempting to save file to: {upload_path}")
-        
+
         # Save the file with proper permissions
         file.save(upload_path)
         try:
@@ -153,7 +151,7 @@ def save_file(file, subfolder):
             logging.info(f"Set permissions for file: {upload_path}")
         except Exception as file_perm_error:
             logging.error(f"Error setting file permissions: {str(file_perm_error)}")
-        
+
         # Verify file was saved
         if os.path.exists(upload_path):
             logging.info(f"File saved successfully: {upload_path}")
@@ -161,7 +159,7 @@ def save_file(file, subfolder):
         else:
             logging.error(f"File not found after save attempt: {upload_path}")
             return None
-            
+
     except Exception as e:
         logging.error(f"Error saving file: {str(e)}, type: {type(e)}")
         logging.error(f"Upload directory: {upload_dir}")
@@ -172,36 +170,24 @@ def save_file(file, subfolder):
 @app.context_processor
 def inject_common_variables():
     context = {
-        'now': datetime.utcnow(),
-        'unread_messages_count': 0
+        'now': datetime.utcnow()
     }
-    
-    # Add unread messages count for logged-in users
-    if current_user.is_authenticated:
-        context['unread_messages_count'] = Message.query.join(ChatSession).filter(
-            db.or_(
-                ChatSession.donor_id == current_user.id,
-                ChatSession.receiver_id == current_user.id
-            ),
-            Message.sender_id != current_user.id,
-            Message.is_read == False
-        ).count()
-    
+
     # If user is logged in as admin, inject admin dashboard data
     if current_user.is_authenticated and current_user.role == 'admin':
         # Get counts for admin dashboard
         context['pending_verifications_count'] = DonorVerification.query.filter_by(status='pending').count()
         context['pending_requests_count'] = BloodRequest.query.filter_by(status='pending').count()
         context['pending_donations_count'] = Donation.query.filter_by(status='pending').count()
-        
+
         # Get recent verifications for admin dashboard
         context['recent_verifications'] = DonorVerification.query.order_by(
             DonorVerification.submission_date.desc()
         ).limit(5).all()
-    
+
     # Add format_verification_status function to templates
     context['format_verification_status'] = format_verification_status
-    
+
     return context
 
 # Routes
@@ -209,10 +195,10 @@ def inject_common_variables():
 def index():
     # Get active testimonials
     testimonials = Testimonial.query.filter_by(is_active=True).order_by(Testimonial.created_at.desc()).limit(2).all()
-    
+
     # Get active impact statistics
     impact_stats = ImpactStat.query.filter_by(is_active=True).all()
-    
+
     return render_template('index.html', testimonials=testimonials, impact_stats=impact_stats)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -278,7 +264,7 @@ def setup_2fa():
     img.save(buffered)
     qr_code = base64.b64encode(buffered.getvalue()).decode()
 
-    return render_template('setup_2fa.html', 
+    return render_template('setup_2fa.html',
                          qr_code=f"data:image/png;base64,{qr_code}",
                          secret=current_user.totp_secret)
 
@@ -301,52 +287,52 @@ def verify_donor():
         from flask_wtf import FlaskForm
         class VerificationForm(FlaskForm):
             pass
-        
+
         form = VerificationForm()
 
         # Check if user already has a pending or approved verification
         existing_verification = DonorVerification.query.filter(
-            DonorVerification.donor_id == current_user.id, 
+            DonorVerification.donor_id == current_user.id,
             DonorVerification.status.in_(['pending', 'approved'])
         ).first()
-        
+
         if existing_verification and existing_verification.status == 'approved':
             flash('You are already verified!', 'info')
             return redirect(url_for('donor_dashboard'))
-        
+
         if existing_verification and existing_verification.status == 'pending':
             flash('Your verification is still being reviewed.', 'info')
             return redirect(url_for('verification_status'))
-        
+
         if request.method == 'POST':
             if not form.validate_on_submit():
                 flash('Form validation failed. Please try again.', 'danger')
                 return render_template('verify_donor.html', form=form)
-                
+
             logging.info("Processing verification submission")
             # Handle file uploads
             id_document = request.files.get('id_document')
             medical_certificate = request.files.get('medical_certificate')
             address_proof = request.files.get('address_proof')
-            
+
             logging.debug(f"Files received - ID: {bool(id_document)}, Medical: {bool(medical_certificate)}, Address: {bool(address_proof)}")
-            
+
             # Make sure required files are present
             if not id_document:
                 flash('ID Document is required', 'danger')
                 return render_template('verify_donor.html', form=form)
-            
+
             # Save files and get filenames
             id_filename = save_file(id_document, 'id_documents')
             if not id_filename:
                 flash('Error saving ID document. Please try again.', 'danger')
                 return render_template('verify_donor.html', form=form)
-            
+
             medical_filename = save_file(medical_certificate, 'medical_certificates') if medical_certificate else None
             address_filename = save_file(address_proof, 'address_proofs') if address_proof else None
-            
+
             logging.info(f"Files saved - ID: {id_filename}, Medical: {medical_filename}, Address: {address_filename}")
-            
+
             # Create verification record
             verification = DonorVerification(
                 donor_id=current_user.id,
@@ -356,10 +342,10 @@ def verify_donor():
                 address_proof_filename=address_filename,
                 questionnaire_responses=json.dumps(request.form.to_dict())
             )
-            
+
             db.session.add(verification)
             current_user.verification_status = 'pending'
-            
+
             # Notify admins
             admins = User.query.filter_by(role='admin').all()
             for admin in admins:
@@ -367,17 +353,17 @@ def verify_donor():
                     admin.id,
                     f"{current_user.first_name} {current_user.last_name}"
                 )
-            
+
             db.session.commit()
             flash('Your verification documents have been submitted successfully!', 'success')
             return redirect(url_for('verification_status'))
-            
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Verification submission error: {str(e)}")
         flash('An error occurred while submitting your verification. Please try again.', 'danger')
         return render_template('verify_donor.html', form=form)
-    
+
     return render_template('verify_donor.html', form=form)
 
 @app.route('/verification-status')
@@ -386,11 +372,11 @@ def verify_donor():
 def verification_status():
     """Page for donors to check their verification status"""
     verification = DonorVerification.query.filter_by(donor_id=current_user.id).order_by(DonorVerification.submission_date.desc()).first()
-    
+
     if not verification:
         flash('You have not submitted any verification documents yet.', 'info')
         return redirect(url_for('verify_donor'))
-    
+
     return render_template('verification_status.html', verification=verification)
 
 @app.route('/admin/verifications')
@@ -401,14 +387,14 @@ def admin_verifications():
     status_filter = request.args.get('status', 'pending')
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    
+
     if status_filter == 'all':
         verifications = DonorVerification.query.order_by(DonorVerification.submission_date.desc())
     else:
         verifications = DonorVerification.query.filter_by(status=status_filter).order_by(DonorVerification.submission_date.desc())
-    
+
     pagination = verifications.paginate(page=page, per_page=per_page)
-    
+
     return render_template('admin_verifications.html', pagination=pagination, status_filter=status_filter)
 @app.route('/admin/verification-view/<int:verification_id>')
 @login_required
@@ -416,7 +402,7 @@ def admin_verifications():
 def verification_view(verification_id):
     """Admin page to view a specific verification"""
     verification = DonorVerification.query.get_or_404(verification_id)
-    
+
     # Parse questionnaire responses if present
     questionnaire = None
     if verification.questionnaire_responses:
@@ -424,7 +410,7 @@ def verification_view(verification_id):
             questionnaire = json.loads(verification.questionnaire_responses)
         except json.JSONDecodeError:
             questionnaire = None
-    
+
     return render_template('review_verification.html',
                           verification=verification,
                           donor=verification.donor,
@@ -438,7 +424,7 @@ def review_verification(verification_id):
     # Get the verification record
     verification = DonorVerification.query.get_or_404(verification_id)
     donor = verification.donor
-    
+
     # Parse questionnaire responses if they exist
     questionnaire = None
     if verification.questionnaire_responses:
@@ -446,50 +432,50 @@ def review_verification(verification_id):
             questionnaire = json.loads(verification.questionnaire_responses)
         except json.JSONDecodeError:
             logging.error(f"Failed to parse questionnaire responses for verification ID {verification_id}")
-    
+
     # Handle POST request for approving/rejecting
     if request.method == 'POST':
         try:
             action = request.form.get('action')
             notes = request.form.get('notes')
-            
+
             if action == 'approve':
                 verification.status = 'approved'
                 verification.donor.verification_status = 'approved'
                 verification.donor.is_verified = True
-                
+
                 # Notify donor of approval
                 notification_handlers['donor_verification_result'](
                     verification.donor_id,
                     'approved'
                 )
-                
+
             elif action == 'reject':
                 verification.status = 'rejected'
                 verification.donor.verification_status = 'rejected'
                 verification.donor.is_verified = False
-                
+
                 # Notify donor of rejection
                 notification_handlers['donor_verification_result'](
                     verification.donor_id,
                     'rejected'
                 )
-            
+
             verification.reviewer_id = current_user.id
             verification.review_date = datetime.utcnow()
             verification.review_notes = notes
-            
+
             db.session.commit()
             flash(f'Verification has been {verification.status}.', 'success')
             return redirect(url_for('admin_verifications'))
-            
+
         except Exception as e:
             db.session.rollback()
             logging.error(f"Verification review error: {str(e)}")
             flash('An error occurred while reviewing the verification. Please try again.', 'danger')
-    
+
     # For GET requests, render the template with verification details
-    return render_template('review_verification.html', 
+    return render_template('review_verification.html',
                            verification=verification,
                            donor=donor,
                            questionnaire=questionnaire)
@@ -500,7 +486,7 @@ def view_document(document_type, filename):
     # Security check: make sure only admins or the document owner can view documents
     if document_type not in ['id_documents', 'medical_certificates', 'address_proofs']:
         abort(404)
-    
+
     # Find which verification this document belongs to
     verification = None
     if document_type == 'id_documents':
@@ -509,14 +495,14 @@ def view_document(document_type, filename):
         verification = DonorVerification.query.filter_by(medical_certificate_filename=filename).first()
     elif document_type == 'address_proofs':
         verification = DonorVerification.query.filter_by(address_proof_filename=filename).first()
-    
+
     if not verification:
         abort(404)
-    
+
     # Check if current user is authorized to view this document
     if current_user.role != 'admin' and verification.donor_id != current_user.id:
         abort(403)
-    
+
     return send_from_directory(os.path.join(app.config['UPLOAD_FOLDER'], document_type), filename)
 
 @app.route('/donate', methods=['GET', 'POST'])
@@ -525,12 +511,12 @@ def donate():
     if current_user.role != 'donor':
         flash('Only donors can access this page.', 'warning')
         return redirect(url_for('index'))
-    
+
     # Check if donor is verified
     if not current_user.is_verified:
         flash('You need to be verified before you can donate blood. Please complete the verification process.', 'warning')
         return redirect(url_for('verify_donor'))
-    
+
     # Check eligibility based on last donation date
     can_donate, message = current_user.can_donate()
     if not can_donate:
@@ -548,11 +534,11 @@ def donate():
                 status='pending'  # Start with pending status
             )
             db.session.add(donation)
-            
+
             # Update user's donation dates
             current_user.last_donation_date = datetime.utcnow()
             current_user.next_eligible_date = calculate_next_donation_date(current_user.last_donation_date)
-            
+
             db.session.commit()
             flash('Donation recorded successfully! It will be verified by the blood bank.', 'success')
             return redirect(url_for('donor_dashboard'))
@@ -574,15 +560,15 @@ def get_dashboard_route(role):
 def admin_dashboard():
     if current_user.role != 'admin':
         return redirect(url_for('index'))
-    
+
     blood_requests = BloodRequest.query.order_by(BloodRequest.created_at.desc()).limit(5).all()
     donations = Donation.query.order_by(Donation.donation_date.desc()).limit(5).all()
-    
+
     # Get recent verifications
     recent_verifications = DonorVerification.query.order_by(
         DonorVerification.submission_date.desc()
     ).limit(5).all()
-    
+
     return render_template(
         'admin_dashboard.html',
         blood_requests=blood_requests,
@@ -624,7 +610,7 @@ def request_blood():
         try:
             blood_type = request.form['blood_type']
             urgency = request.form['urgency']
-            
+
             # Create blood request
             blood_request = BloodRequest(
                 requester_id=current_user.id,
@@ -636,29 +622,29 @@ def request_blood():
                 required_by=datetime.strptime(request.form['required_by'], '%Y-%m-%d') if request.form.get('required_by') else None
             )
             db.session.add(blood_request)
-            
+
             # Notify matching donors
             notification_handlers['matching_donors'](
                 blood_request.id,
                 blood_type,
                 urgency
             )
-            
+
             # Notify admins
             notification_handlers['admin_blood_request'](
                 blood_type,
                 urgency
             )
-            
+
             db.session.commit()
             flash('Blood request created successfully!', 'success')
             return redirect(url_for('receiver_dashboard'))
-            
+
         except Exception as e:
             db.session.rollback()
             logging.error(f"Blood request creation error: {str(e)}")
             flash('An error occurred while creating the request. Please try again.', 'danger')
-    
+
     return render_template('request_blood.html')
 
 @app.route('/blood-requests')
@@ -718,9 +704,8 @@ def register():
                 last_name=request.form['last_name'],
                 password_hash=generate_password_hash(request.form['password']),
                 role=request.form.get('role', 'donor'),
-                # Additional profile information
-                blood_type=request.form.get('blood_type'),
-                phone=request.form.get('phone'),
+                # Additional profile information                blood_type=request.form.get('blood_type'),
+                phone=request.form.get('mobile'),
                 address=request.form.get('address'),
                 gender=request.form.get('gender'),
                 date_of_birth=datetime.strptime(request.form.get('date_of_birth', ''), '%Y-%m-%d') if request.form.get('date_of_birth') else None
@@ -749,7 +734,7 @@ def admin_testimonials():
     """Admin page to manage testimonials"""
     if request.method == 'POST':
         action = request.form.get('action')
-        
+
         if action == 'add':
             new_testimonial = Testimonial(
                 name=request.form.get('name'),
@@ -760,7 +745,7 @@ def admin_testimonials():
             db.session.add(new_testimonial)
             db.session.commit()
             flash('Testimonial added successfully', 'success')
-            
+
         elif action == 'edit':
             testimonial_id = request.form.get('testimonial_id')
             testimonial = Testimonial.query.get_or_404(testimonial_id)
@@ -770,14 +755,14 @@ def admin_testimonials():
             testimonial.is_active = request.form.get('is_active') == 'on'
             db.session.commit()
             flash('Testimonial updated successfully', 'success')
-            
+
         elif action == 'delete':
             testimonial_id = request.form.get('testimonial_id')
             testimonial = Testimonial.query.get_or_404(testimonial_id)
             db.session.delete(testimonial)
             db.session.commit()
             flash('Testimonial deleted successfully', 'success')
-    
+
     testimonials = Testimonial.query.order_by(Testimonial.created_at.desc()).all()
     return render_template('admin_testimonials.html', testimonials=testimonials)
 
@@ -788,7 +773,7 @@ def admin_impact_stats():
     """Admin page to manage impact statistics"""
     if request.method == 'POST':
         action = request.form.get('action')
-        
+
         if action == 'add':
             new_stat = ImpactStat(
                 title=request.form.get('title'),
@@ -798,7 +783,7 @@ def admin_impact_stats():
             db.session.add(new_stat)
             db.session.commit()
             flash('Impact statistic added successfully', 'success')
-            
+
         elif action == 'edit':
             stat_id = request.form.get('stat_id')
             stat = ImpactStat.query.get_or_404(stat_id)
@@ -807,14 +792,14 @@ def admin_impact_stats():
             stat.is_active = request.form.get('is_active') == 'on'
             db.session.commit()
             flash('Impact statistic updated successfully', 'success')
-            
+
         elif action == 'delete':
             stat_id = request.form.get('stat_id')
             stat = ImpactStat.query.get_or_404(stat_id)
             db.session.delete(stat)
             db.session.commit()
             flash('Impact statistic deleted successfully', 'success')
-    
+
     impact_stats = ImpactStat.query.all()
     return render_template('admin_impact_stats.html', impact_stats=impact_stats)
 
@@ -823,25 +808,25 @@ def forgot_password():
     """Handle forgot password requests"""
     if request.method == 'POST':
         email = request.form.get('email')
-        
+
         if not email:
             flash('Please enter your email address.', 'danger')
             return redirect(url_for('forgot_password'))
-        
+
         user = User.query.filter_by(email=email).first()
-        
+
         # Even if the user doesn't exist, don't reveal this information
         # to prevent email enumeration attacks
         if user:
             token = user.generate_password_reset_token()
-            
+
             # Construct absolute URL for password reset
             if request.is_secure:
                 protocol = 'https'
             else:
                 protocol = 'http'
             reset_url = f"{protocol}://{request.host}{url_for('reset_password')}"
-            
+
             if send_password_reset_email(user, token, reset_url):
                 flash('Password reset instructions have been sent to your email.', 'success')
             else:
@@ -851,56 +836,56 @@ def forgot_password():
             logging.info(f"Password reset requested for non-existent email: {email}")
             # Still show success message to prevent email enumeration
             flash('If your email is registered, you will receive password reset instructions.', 'success')
-        
+
         return redirect(url_for('login'))
-    
+
     return render_template('forgot_password.html')
 
 @app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
     """Handle password reset with token verification"""
     token = request.args.get('token') or request.form.get('token')
-    
+
     if not token:
         flash('Invalid or missing reset token.', 'danger')
         return redirect(url_for('login'))
-    
+
     # Find the reset token in the database
     reset = PasswordReset.query.filter_by(token=token, used=False).first()
-    
+
     if not reset or not reset.is_valid():
         flash('The password reset link is invalid or has expired.', 'danger')
         return redirect(url_for('login'))
-    
+
     user = User.query.get(reset.user_id)
-    
+
     if not user:
         flash('User account not found.', 'danger')
         return redirect(url_for('login'))
-    
+
     if request.method == 'POST':
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        
+
         if not password or len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
             return render_template('reset_password.html', token=token)
-        
+
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('reset_password.html', token=token)
-        
+
         # Update the user's password
         user.password_hash = generate_password_hash(password)
-        
+
         # Invalidate the token
         reset.invalidate()
-        
+
         db.session.commit()
-        
+
         flash('Your password has been reset successfully. You can now log in with your new password.', 'success')
         return redirect(url_for('login'))
-    
+
     return render_template('reset_password.html', token=token)
 
 @app.route('/admin/users')
@@ -912,12 +897,12 @@ def admin_users():
     search_query = request.args.get('search', '')
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    
+
     query = User.query
-    
+
     if role_filter != 'all':
         query = query.filter_by(role=role_filter)
-    
+
     if search_query:
         query = query.filter(
             db.or_(
@@ -926,11 +911,11 @@ def admin_users():
                 User.last_name.ilike(f'%{search_query}%')
             )
         )
-    
+
     pagination = query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page)
-    
-    return render_template('admin_users.html', 
-                          pagination=pagination, 
+
+    return render_template('admin_users.html',
+                          pagination=pagination,
                           role_filter=role_filter,
                           search_query=search_query)
 
@@ -940,66 +925,66 @@ def admin_users():
 def admin_reset_password(user_id):
     """Allow admins to reset user passwords"""
     user = User.query.get_or_404(user_id)
-    
+
     if request.method == 'POST':
         password = request.form.get('password')
         confirm_reset = request.form.get('confirm_reset')
-        
+
         # Validate confirmation
         if not confirm_reset:
             flash('You must confirm the password reset.', 'danger')
             return render_template('admin_reset_password.html', user=user)
-        
+
         # Validate password complexity
         is_valid, error_message = validate_password_complexity(password)
         if not is_valid:
             flash(error_message, 'danger')
             return render_template('admin_reset_password.html', user=user)
-        
+
         try:
             # Update the user's password
             old_hash = user.password_hash  # Keep for logging
             user.password_hash = generate_password_hash(password)
             db.session.commit()
-            
+
             # Log the password reset action
             log_admin_action(
-                admin_user=current_user, 
-                action_type='password_reset', 
+                admin_user=current_user,
+                action_type='password_reset',
                 target_user=user,
                 details={
                     'method': 'admin_reset',
                     'old_hash_changed': old_hash != user.password_hash
                 }
             )
-            
+
             flash(f'Password for {user.email} has been reset successfully.', 'success')
             return redirect(url_for('admin_users'))
-        
+
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error resetting password for user {user.email}: {str(e)}")
             flash('An error occurred while resetting the password.', 'danger')
-    
+
     return render_template('admin_reset_password.html', user=user)
 
 # Email utility function (should be in email_utils.py, but included here for completeness)
 def send_password_reset_email(user, token, reset_url):
     """
     Send a password reset email to a user
-    
+
     Args:
         user: User object
         token: Password reset token
         reset_url: Base URL for password reset (e.g., https://example.com/reset-password)
-    
+
     Returns:
         bool: True if the email was sent successfully
     """
     reset_link = f"{reset_url}?token={token}"
-    
+
     subject = "Reset Your BloodBridge Password"
-    
+
     # HTML version
     html_content = f"""
     <html>
@@ -1008,26 +993,26 @@ def send_password_reset_email(user, token, reset_url):
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #dc3545;">BloodBridge</h2>
             </div>
-            
+
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
                 <h3>Hello {user.first_name},</h3>
-                
+
                 <p>We received a request to reset your password for your BloodBridge account.</p>
-                
+
                 <p>To reset your password, please click the button below:</p>
-                
+
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="{reset_link}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
                 </div>
-                
+
                 <p>If you didn't request this password reset, you can ignore this email and your password will remain unchanged.</p>
-                
+
                 <p>This password reset link will expire in 24 hours.</p>
-                
+
                 <p>Thank you,<br>
                 The BloodBridge Team</p>
             </div>
-            
+
             <div style="margin-top: 20px; font-size: 12px; color: #6c757d; text-align: center;">
                 <p>If you're having trouble clicking the button, copy and paste the URL below into your web browser:</p>
                 <p style="word-break: break-all;">{reset_link}</p>
@@ -1036,25 +1021,25 @@ def send_password_reset_email(user, token, reset_url):
     </body>
     </html>
     """
-    
+
     # Plain text version
     text_content = f"""
     Hello {user.first_name},
-    
+
     We received a request to reset your password for your BloodBridge account.
-    
+
     To reset your password, please visit the link below:
-    
+
     {reset_link}
-    
+
     If you didn't request this password reset, you can ignore this email and your password will remain unchanged.
-    
+
     This password reset link will expire in 24 hours.
-    
+
     Thank you,
     The BloodBridge Team
     """
-    
+
     from email_utils import send_email
     return send_email(user.email, subject, html_content, text_content)
 
@@ -1077,13 +1062,13 @@ def inject_notifications():
         recent_notifications = Notification.query.filter_by(user_id=current_user.id)\
             .order_by(Notification.created_at.desc())\
             .limit(5).all()
-        
+
         # Get unread notifications
         unread_notifications = Notification.query.filter_by(
             user_id=current_user.id,
             is_read=False
         ).all()
-        
+
         return {
             'recent_notifications': recent_notifications,  # For dropdown
             'unread_notifications': unread_notifications  # For badge
@@ -1096,11 +1081,11 @@ def notifications():
     """View all notifications"""
     page = request.args.get('page', 1, type=int)
     per_page = 20
-    
+
     notifications = Notification.query.filter_by(user_id=current_user.id)\
         .order_by(Notification.created_at.desc())\
         .paginate(page=page, per_page=per_page)
-    
+
     return render_template('notifications.html', notifications=notifications)
 
 @app.route('/notifications/mark-read', methods=['POST'])
@@ -1123,10 +1108,10 @@ def mark_all_read():
 def mark_notification_read(notification_id):
     """Mark a specific notification as read"""
     notification = Notification.query.get_or_404(notification_id)
-    
+
     if notification.user_id != current_user.id:
         abort(403)
-    
+
     try:
         notification.is_read = True
         db.session.commit()
@@ -1170,7 +1155,7 @@ def create_notification_for_event(event_type, user_id, **kwargs):
             'link': url_for('blood_requests')
         }
     }
-    
+
     if event_type in notifications:
         notification_data = notifications[event_type]
         Notification.create_notification(
@@ -1195,7 +1180,7 @@ def test_notifications():
 def create_test_notification():
     """Create a test notification"""
     notification_type = request.json.get('type', 'info')
-    
+
     # Create different messages based on type
     notifications = {
         'info': {
@@ -1219,9 +1204,9 @@ def create_test_notification():
             'link': url_for('notifications')
         }
     }
-    
+
     notif_data = notifications.get(notification_type, notifications['info'])
-    
+
     # Create the notification
     notification = Notification.create_notification(
         user_id=current_user.id,
@@ -1230,13 +1215,13 @@ def create_test_notification():
         type=notification_type,
         link=notif_data['link']
     )
-    
+
     # Get unread count for badge update
     unread_count = Notification.query.filter_by(
         user_id=current_user.id,
         is_read=False
     ).count()
-    
+
     return jsonify({
         'success': True,
         'notification': {
@@ -1248,7 +1233,7 @@ def create_test_notification():
     })
 def create_notification_handlers():
     """Set up notification handlers for specific events"""
-    
+
     def notify_admin_new_verification(admin_id, donor_name):
         """Notify admin about new verification request"""
         Notification.create_notification(
@@ -1258,7 +1243,7 @@ def create_notification_handlers():
             type="info",
             link=url_for('admin_verifications')
         )
-    
+
     def notify_donor_verification_result(donor_id, status):
         """Notify donor about verification result"""
         if status == 'approved':
@@ -1277,7 +1262,7 @@ def create_notification_handlers():
                 type="danger",
                 link=url_for('verification_status')
             )
-    
+
     def notify_matching_donors(request_id, blood_type, urgency):
         """Notify donors with matching blood type about new request"""
         # Find all verified donors with matching blood type
@@ -1286,7 +1271,7 @@ def create_notification_handlers():
             blood_type=blood_type,
             is_verified=True
         ).all()
-        
+
         # Notify each matching donor
         for donor in matching_donors:
             Notification.create_notification(
@@ -1296,7 +1281,7 @@ def create_notification_handlers():
                 type="info" if urgency == 'normal' else urgency,
                 link=url_for('blood_requests')
             )
-    
+
     def notify_admins_blood_request(blood_type, urgency):
         """Notify all admins about new blood request"""
         admins = User.query.filter_by(role='admin').all()
@@ -1308,7 +1293,7 @@ def create_notification_handlers():
                 type="info" if urgency == 'normal' else urgency,
                 link=url_for('blood_requests')
             )
-    
+
     return {
         'admin_verification': notify_admin_new_verification,
         'donor_verification_result': notify_donor_verification_result,
@@ -1323,31 +1308,31 @@ def admin_blood_requests():
     """Admin page to manage all blood requests"""
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    
+
     # Get filter parameters
     blood_type_filter = request.args.get('blood_type', 'all')
     urgency_filter = request.args.get('urgency', 'all')
     status_filter = request.args.get('status', 'all')
-    
+
     # Build query based on filters
     query = BloodRequest.query
-    
+
     if blood_type_filter != 'all':
         query = query.filter_by(blood_type=blood_type_filter)
-    
+
     if urgency_filter != 'all':
         query = query.filter_by(urgency=urgency_filter)
-    
+
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
-    
+
     # Order by creation date (newest first)
     query = query.order_by(BloodRequest.created_at.desc())
-    
+
     # Paginate results
     blood_requests = query.paginate(page=page, per_page=per_page)
-    
-    return render_template('admin_blood_requests.html', 
+
+    return render_template('admin_blood_requests.html',
                           blood_requests=blood_requests,
                           blood_type_filter=blood_type_filter,
                           urgency_filter=urgency_filter,
@@ -1360,21 +1345,21 @@ def admin_donations():
     """Admin page to manage all donations"""
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    
+
     # Get filter parameters
     blood_type_filter = request.args.get('blood_type', 'all')
     status_filter = request.args.get('status', 'all')
     time_filter = request.args.get('time_range', 'all')
-    
+
     # Build query based on filters
     query = Donation.query
-    
+
     if blood_type_filter != 'all':
         query = query.filter_by(blood_type=blood_type_filter)
-    
+
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
-    
+
     # Apply time filter
     now = datetime.utcnow()
     if time_filter == 'today':
@@ -1387,13 +1372,13 @@ def admin_donations():
     elif time_filter == 'month':
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         query = query.filter(Donation.donation_date >= month_start)
-    
+
     # Order by donation date (newest first)
     query = query.order_by(Donation.donation_date.desc())
-    
+
     # Paginate results
     donations = query.paginate(page=page, per_page=per_page)
-    
+
     # Calculate blood type statistics for display in the summary
     blood_type_stats = {}
     for blood_type in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']:
@@ -1402,19 +1387,19 @@ def admin_donations():
             Donation.blood_type == blood_type,
             Donation.status == 'completed'
         ).scalar() or 0
-        
+
         # Get the last donation date for this blood type
         last_donation = Donation.query.filter_by(
             blood_type=blood_type,
             status='completed'
         ).order_by(Donation.donation_date.desc()).first()
-        
+
         blood_type_stats[blood_type] = {
             'total_units': total_units,
             'last_donation': last_donation.donation_date if last_donation else None
         }
-    
-    return render_template('admin_donations.html', 
+
+    return render_template('admin_donations.html',
                           donations=donations,
                           blood_type_filter=blood_type_filter,
                           status_filter=status_filter,
@@ -1429,21 +1414,21 @@ def admin_logs():
     """Admin page to view action logs"""
     page = request.args.get('page', 1, type=int)
     per_page = 20
-    
+
     # Get filter parameters
     action_type_filter = request.args.get('action_type', 'all')
     admin_filter = request.args.get('admin_id', 'all')
     time_filter = request.args.get('time_range', 'all')
-    
+
     # Build query based on filters
     query = AdminActionLog.query
-    
+
     if action_type_filter != 'all':
         query = query.filter(AdminActionLog.action_type.like(f'{action_type_filter}%'))
-    
+
     if admin_filter != 'all':
         query = query.filter_by(admin_id=int(admin_filter))
-    
+
     # Apply time filter
     now = datetime.utcnow()
     if time_filter == 'today':
@@ -1456,16 +1441,16 @@ def admin_logs():
     elif time_filter == 'month':
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         query = query.filter(AdminActionLog.timestamp >= month_start)
-    
+
     # Order by timestamp (newest first)
     query = query.order_by(AdminActionLog.timestamp.desc())
-    
+
     # Paginate results
     admin_logs = query.paginate(page=page, per_page=per_page)
-    
+
     # Get all admin users for filter dropdown
     admins = User.query.filter_by(role='admin').all()
-    
+
     # Define a template filter to prettify JSON
     @app.template_filter('prettify_json')
     def prettify_json(json_string):
@@ -1477,8 +1462,8 @@ def admin_logs():
         except:
             pass
         return json_string
-    
-    return render_template('admin_logs.html', 
+
+    return render_template('admin_logs.html',
                           admin_logs=admin_logs,
                           action_type_filter=action_type_filter,
                           admin_filter=admin_filter,
@@ -1504,18 +1489,18 @@ def admin_logs_by_type(action_type):
 def view_blood_request(request_id):
     """View details of a blood request"""
     blood_request = BloodRequest.query.get_or_404(request_id)
-    
+
     # Authorization check - only admins, the requester, or compatible donors can view
     if current_user.role != 'admin' and current_user.id != blood_request.requester_id:
         if current_user.role != 'donor' or current_user.blood_type not in calculate_blood_compatibility(blood_request.blood_type):
             flash('You do not have permission to view this request', 'danger')
             return redirect(url_for('blood_requests'))
-    
+
     # Get requester stats
     requester_stats = {
         'total_requests': BloodRequest.query.filter_by(requester_id=blood_request.requester_id).count()
     }
-    
+
     # For admins and receivers, show compatible donors
     compatible_donors = []
     if current_user.role in ['admin', 'receiver']:
@@ -1524,16 +1509,16 @@ def view_blood_request(request_id):
             is_verified=True,
             blood_type=blood_request.blood_type
         ).all()
-        
+
         # Add a flag to check if donor is eligible to donate now
         for donor in compatible_donors:
-            donor.is_eligible_to_donate = (not donor.next_eligible_date or 
+            donor.is_eligible_to_donate = (not donor.next_eligible_date or
                                           donor.next_eligible_date <= datetime.utcnow())
-    
+
     # Calculate blood availability stats
     blood_availability = calculate_blood_availability(blood_request.blood_type, blood_request.units_needed)
-    
-    return render_template('view_blood_request.html', 
+
+    return render_template('view_blood_request.html',
                           request=blood_request,
                           requester_stats=requester_stats,
                           compatible_donors=compatible_donors,
@@ -1545,23 +1530,23 @@ def view_blood_request(request_id):
 def view_donation(donation_id):
     """View details of a donation"""
     donation = Donation.query.get_or_404(donation_id)
-    
+
     # Authorization check - only admins or the donor can view
     if current_user.role != 'admin' and current_user.id != donation.donor_id:
         flash('You do not have permission to view this donation', 'danger')
         return redirect(url_for('donor_dashboard'))
-    
+
     # Get donor stats
     donor_stats = {
         'total_donations': Donation.query.filter_by(donor_id=donation.donor_id, status='completed').count(),
         'last_donation': Donation.query.filter_by(
             donor_id=donation.donor_id,
             status='completed'
-        ).order_by(Donation.donation_date.desc()).first().donation_date if 
+        ).order_by(Donation.donation_date.desc()).first().donation_date if
             Donation.query.filter_by(donor_id=donation.donor_id, status='completed').count() > 0 else None
     }
-    
-    return render_template('view_donation.html', 
+
+    return render_template('view_donation.html',
                           donation=donation,
                           donor_stats=donor_stats)
 
@@ -1573,13 +1558,13 @@ def update_blood_request_status(request_id, status):
     if status not in ['pending', 'processing', 'fulfilled', 'cancelled']:
         flash('Invalid status', 'danger')
         return redirect(url_for('admin_blood_requests'))
-    
+
     blood_request = BloodRequest.query.get_or_404(request_id)
-    
+
     try:
         old_status = blood_request.status
         blood_request.status = status
-        
+
         # Add timestamps based on status
         now = datetime.utcnow()
         if status == 'processing':
@@ -1589,7 +1574,7 @@ def update_blood_request_status(request_id, status):
             blood_request.fulfilled_by = f"{current_user.first_name} {current_user.last_name}"
         elif status == 'cancelled':
             blood_request.cancelled_date = now
-        
+
         # Log the admin action
         log_admin_action(
             admin_user=current_user,
@@ -1603,21 +1588,21 @@ def update_blood_request_status(request_id, status):
                 'units': blood_request.units_needed
             }
         )
-        
+
         # Notify the requester about the status change
         notification_handlers['request_update'](
             blood_request.requester_id,
             blood_request.id,
             status
         )
-        
+
         db.session.commit()
         flash(f'Blood request status updated to {status}', 'success')
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error updating blood request status: {str(e)}")
         flash('An error occurred while updating status', 'danger')
-    
+
     return redirect(url_for('view_blood_request', request_id=request_id))
 
 @app.route('/update-donation-status/<int:donation_id>/<status>')
@@ -1628,24 +1613,24 @@ def update_donation_status(donation_id, status):
     if status not in ['pending', 'completed', 'cancelled']:
         flash('Invalid status', 'danger')
         return redirect(url_for('admin_donations'))
-    
+
     donation = Donation.query.get_or_404(donation_id)
-    
+
     try:
         old_status = donation.status
         donation.status = status
-        
+
         # Add timestamps based on status
         now = datetime.utcnow()
         if status == 'completed':
             donation.verification_date = now
             donation.verified_by = f"{current_user.first_name} {current_user.last_name}"
-            
+
             # Update donor's last donation date and next eligible date
             donor = donation.donor
             donor.last_donation_date = donation.donation_date
             donor.next_eligible_date = calculate_next_donation_date(donation.donation_date)
-        
+
         # Log the admin action
         log_admin_action(
             admin_user=current_user,
@@ -1659,21 +1644,21 @@ def update_donation_status(donation_id, status):
                 'units': donation.units
             }
         )
-        
+
         # Notify the donor about the status change
         notification_handlers['donation_result'](
             donation.donor_id,
             donation.id,
             status
         )
-        
+
         db.session.commit()
         flash(f'Donation status updated to {status}', 'success')
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error updating donation status: {str(e)}")
         flash('An error occurred while updating status', 'danger')
-    
+
     return redirect(url_for('view_donation', donation_id=donation_id))
 
 @app.route('/delete-blood-request/<int:request_id>')
@@ -1682,10 +1667,10 @@ def update_donation_status(donation_id, status):
 def delete_blood_request(request_id):
     """Delete a blood request"""
     blood_request = BloodRequest.query.get_or_404(request_id)
-    
+
     try:
         requester = blood_request.requester
-        
+
         # Log the admin action
         log_admin_action(
             admin_user=current_user,
@@ -1698,17 +1683,17 @@ def delete_blood_request(request_id):
                 'status': blood_request.status
             }
         )
-        
+
         # Delete the request
         db.session.delete(blood_request)
         db.session.commit()
-        
+
         flash('Blood request deleted successfully', 'success')
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error deleting blood request: {str(e)}")
         flash('An error occurred while deleting the request', 'danger')
-    
+
     return redirect(url_for('admin_blood_requests'))
 
 @app.route('/delete-donation/<int:donation_id>')
@@ -1717,10 +1702,10 @@ def delete_blood_request(request_id):
 def delete_donation(donation_id):
     """Delete a donation"""
     donation = Donation.query.get_or_404(donation_id)
-    
+
     try:
         donor = donation.donor
-        
+
         # Log the admin action
         log_admin_action(
             admin_user=current_user,
@@ -1733,17 +1718,17 @@ def delete_donation(donation_id):
                 'status': donation.status
             }
         )
-        
+
         # Delete the donation
         db.session.delete(donation)
         db.session.commit()
-        
+
         flash('Donation deleted successfully', 'success')
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error deleting donation: {str(e)}")
         flash('An error occurred while deleting the donation', 'danger')
-    
+
     return redirect(url_for('admin_donations'))
 
 @app.route('/admin/view-user/<int:user_id>')
@@ -1752,22 +1737,22 @@ def delete_donation(donation_id):
 def admin_view_user(user_id):
     """View user details"""
     user = User.query.get_or_404(user_id)
-    
+
     # Get user statistics based on role
     user_stats = {}
-    
+
     if user.role == 'donor':
         user_stats['total_donations'] = Donation.query.filter_by(donor_id=user.id, status='completed').count()
         user_stats['total_units'] = db.session.query(db.func.sum(Donation.units)).filter(
             Donation.donor_id == user.id,
             Donation.status == 'completed'
         ).scalar() or 0
-        
+
         user_stats['last_donation'] = Donation.query.filter_by(
             donor_id=user.id,
             status='completed'
         ).order_by(Donation.donation_date.desc()).first()
-        
+
     elif user.role == 'receiver':
         user_stats['total_requests'] = BloodRequest.query.filter_by(requester_id=user.id).count()
         user_stats['pending_requests'] = BloodRequest.query.filter_by(
@@ -1778,7 +1763,7 @@ def admin_view_user(user_id):
             requester_id=user.id,
             status='fulfilled'
         ).count()
-    
+
     # Log this admin action
     log_admin_action(
         admin_user=current_user,
@@ -1786,7 +1771,7 @@ def admin_view_user(user_id):
         target_user=user,
         details=None
     )
-    
+
     return render_template('admin_view_user.html', user=user, user_stats=user_stats)
 
 @app.route('/generate-donation-certificate/<int:donation_id>')
@@ -1794,20 +1779,20 @@ def admin_view_user(user_id):
 def generate_donation_certificate(donation_id):
     """Generate a certificate for a donation"""
     donation = Donation.query.get_or_404(donation_id)
-    
+
     # Authorization check - only admins or the donor can generate certificate
     if current_user.role != 'admin' and current_user.id != donation.donor_id:
         flash('You do not have permission to generate this certificate', 'danger')
         return redirect(url_for('donor_dashboard'))
-    
+
     # Only allow certificate generation for completed donations
     if donation.status != 'completed':
         flash('Certificates can only be generated for completed donations', 'warning')
         return redirect(url_for('view_donation', donation_id=donation_id))
-    
+
     # In a real application, this would generate a PDF certificate
     # For now, we'll just create a simple HTML certificate
-    
+
     return render_template('donation_certificate.html', donation=donation)
 
 # Helper functions
@@ -1830,10 +1815,10 @@ def calculate_blood_availability(blood_type, units_needed):
         Donation.blood_type == blood_type,
         Donation.status == 'completed'
     ).scalar() or 0
-    
+
     # Calculate percentage available (max 100%)
     percentage = min(100, int((available_units / max(1, units_needed)) * 100))
-    
+
     # Determine status message and class
     if percentage < 30:
         status_class = 'danger'
@@ -1847,7 +1832,7 @@ def calculate_blood_availability(blood_type, units_needed):
         status_class = 'success'
         message = f"Sufficient stock available. {available_units} units available."
         icon = 'fa-check-circle'
-    
+
     return {
         'available_units': available_units,
         'needed_units': units_needed,
@@ -1874,7 +1859,7 @@ def notify_request_update(requester_id, request_id, status):
         notification_type = 'danger'
     else:
         return None
-    
+
     return Notification.create_notification(
         user_id=requester_id,
         title=title,
@@ -1895,7 +1880,7 @@ def notify_donation_result(donor_id, donation_id, status):
         notification_type = 'warning'
     else:
         return None
-    
+
     return Notification.create_notification(
         user_id=donor_id,
         title=title,
@@ -1916,18 +1901,18 @@ def admin_toggle_user_status(user_id, action):
     if action not in ['activate', 'deactivate']:
         flash('Invalid action', 'danger')
         return redirect(url_for('admin_users'))
-    
+
     user = User.query.get_or_404(user_id)
-    
+
     try:
         # Can't deactivate yourself
         if user.id == current_user.id:
             flash('You cannot deactivate your own account', 'danger')
             return redirect(url_for('admin_view_user', user_id=user.id))
-        
+
         # Toggle status
         user.is_active = (action == 'activate')
-        
+
         # Log the admin action
         log_admin_action(
             admin_user=current_user,
@@ -1938,15 +1923,15 @@ def admin_toggle_user_status(user_id, action):
                 'new_status': user.is_active
             }
         )
-        
+
         db.session.commit()
         flash(f'User has been {"activated" if user.is_active else "deactivated"}', 'success')
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error toggling user status: {str(e)}")
         flash('An error occurred while updating user status', 'danger')
-    
+
     return redirect(url_for('admin_view_user', user_id=user.id))
 @app.route('/test-upload', methods=['GET', 'POST'])
 def test_upload():
@@ -1955,12 +1940,12 @@ def test_upload():
         if 'file' not in request.files:
             flash('No file part', 'danger')
             return redirect(request.url)
-        
+
         file = request.files['file']
         if file.filename == '':
             flash('No selected file', 'danger')
             return redirect(request.url)
-        
+
         if file and allowed_file(file.filename):
             try:
                 filename = save_file(file, 'id_documents')
@@ -1973,9 +1958,9 @@ def test_upload():
                 flash('Error uploading file', 'danger')
         else:
             flash('Invalid file type', 'danger')
-        
+
         return redirect(request.url)
-    
+
     return '''
     <!doctype html>
     <title>Test File Upload</title>
