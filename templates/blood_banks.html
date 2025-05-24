@@ -11,13 +11,30 @@
                     <h5 class="card-title">Find Blood Banks</h5>
                     
                     <!-- Current Location Button -->
-                    <div class="d-grid mb-3">
-                        <button id="current-location-btn" class="btn btn-outline-primary">
-                            <i class="fas fa-location-arrow me-2"></i>Use My Current Location
-                        </button>
-                        <div id="location-status" class="small text-muted mt-1 text-center d-none">
-                            <div class="spinner-border spinner-border-sm text-primary me-1" role="status"></div>
-                            Getting your location...
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Set Your Location</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <button id="current-location-btn" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-location-arrow me-2"></i>Use My Current Location
+                                </button>
+                                <div id="location-status" class="small text-muted mt-1 text-center d-none">
+                                    <div class="spinner-border spinner-border-sm text-primary me-1" role="status"></div>
+                                    Getting your location...
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <p class="small mb-2"><i class="fas fa-city me-1"></i><strong>Select a major city:</strong></p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary location-preset" data-lat="27.7172" data-lng="85.3240">Kathmandu</button>
+                                    <button class="btn btn-sm btn-outline-secondary location-preset" data-lat="28.2096" data-lng="83.9856">Pokhara</button>
+                                    <button class="btn btn-sm btn-outline-secondary location-preset" data-lat="27.6644" data-lng="85.3187">Lalitpur</button>
+                                    <button class="btn btn-sm btn-outline-secondary location-preset" data-lat="27.6710" data-lng="85.4298">Bhaktapur</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -74,32 +91,91 @@
         crossorigin=""></script>
 
 <script>
-// Nepal blood bank data - Focused on Kathmandu and major cities
-const bloodBanks = [
-    { name: 'Nepal Red Cross Society Central Blood Transfusion Service', position: [27.7065, 85.3304], address: 'Pradarshani Marg, Kathmandu', phone: '01-4225344' },
-    { name: 'Teaching Hospital Blood Bank', position: [27.7361, 85.3311], address: 'Maharajgunj, Kathmandu', phone: '01-4412303' },
-    { name: 'Bhaktapur Blood Bank', position: [27.6716, 85.4295], address: 'Bhaktapur', phone: '01-6611661' },
-    { name: 'Patan Hospital Blood Bank', position: [27.6688, 85.3191], address: 'Patan, Lalitpur', phone: '01-5522295' },
-    { name: 'Nepal Mediciti Hospital Blood Bank', position: [27.6546, 85.3078], address: 'Bhaisepati, Lalitpur', phone: '01-4217766' },
-    { name: 'B&B Hospital Blood Bank', position: [27.6683, 85.3277], address: 'Gwarko, Lalitpur', phone: '01-5533206' },
-    { name: 'Grande Hospital Blood Bank', position: [27.6953, 85.3192], address: 'Dhapasi, Kathmandu', phone: '01-5159266' },
-    { name: 'Pokhara Red Cross Blood Bank', position: [28.2071, 83.9857], address: 'Pokhara', phone: '061-520726' },
-    { name: 'Bir Hospital Blood Bank', position: [27.7046, 85.3142], address: 'Kanti Path, Kathmandu', phone: '01-4221119' },
-    { name: 'Chitwan Red Cross Blood Bank', position: [27.6818, 84.4309], address: 'Bharatpur, Chitwan', phone: '056-520626' },
-    { name: 'Nepalgunj Blood Bank', position: [28.0543, 81.6143], address: 'Nepalgunj, Banke', phone: '081-520212' },
-    { name: 'Biratnagar Blood Bank', position: [26.4585, 87.2675], address: 'Biratnagar, Morang', phone: '021-523094' },
-    { name: 'Dharan Blood Bank', position: [26.8139, 87.2835], address: 'Dharan, Sunsari', phone: '025-520427' },
-    { name: 'Butwal Blood Bank', position: [27.6866, 83.4645], address: 'Butwal, Rupandehi', phone: '071-540054' },
-    { name: 'Hetauda Blood Bank', position: [27.4290, 85.0320], address: 'Hetauda, Makwanpur', phone: '057-520417' }
-];
-
+// Add these variables at the beginning of your script section, before any functions
 let map;
 let markers = [];
-let userMarker = null;
-let userLocationCircle = null;
-let userPosition = null;
+let userMarker;
+let userLocationCircle;
+let userPosition;
 
+// Sample blood banks data for Nepal
+const bloodBanks = [
+    {
+        name: "Nepal Red Cross Society Blood Bank",
+        address: "Balkumari, Lalitpur",
+        phone: "01-5186041",
+        position: [27.6710, 85.3298]
+    },
+    {
+        name: "Central Blood Transfusion Service",
+        address: "Exhibition Road, Kathmandu",
+        phone: "01-4225344",
+        position: [27.7041, 85.3151]
+    },
+    {
+        name: "Bhaktapur Blood Bank",
+        address: "Bhaktapur Durbar Square",
+        phone: "01-6611661",
+        position: [27.6718, 85.4298]
+    },
+    {
+        name: "Pokhara Red Cross Blood Bank",
+        address: "Prithvi Chowk, Pokhara",
+        phone: "061-520726",
+        position: [28.2096, 83.9856]
+    },
+    {
+        name: "Biratnagar Blood Bank",
+        address: "Main Road, Biratnagar",
+        phone: "021-523126",
+        position: [26.4513, 87.2701]
+    },
+    {
+        name: "Birgunj Blood Donation Center",
+        address: "Adarshnagar, Birgunj",
+        phone: "051-522056",
+        position: [27.0104, 84.8770]
+    },
+    {
+        name: "Chitwan Blood Bank",
+        address: "Bharatpur, Chitwan",
+        phone: "056-520126",
+        position: [27.5818, 84.4309]
+    },
+    {
+        name: "Butwal Red Cross Blood Center",
+        address: "Tansen Road, Butwal",
+        phone: "071-540126",
+        position: [27.7006, 83.4482]
+    },
+    {
+        name: "Dharan Blood Bank",
+        address: "BP Koirala Institute, Dharan",
+        phone: "025-520126",
+        position: [26.8153, 87.2830]
+    },
+    {
+        name: "Nepalgunj Blood Center",
+        address: "Dhamboji, Nepalgunj",
+        phone: "081-520126",
+        position: [28.0650, 81.6167]
+    }
+];
+
+// Make sure this is placed before the DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if site is running on HTTPS
+    if (location.protocol !== 'https:' && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+        const warningElement = document.createElement('div');
+        warningElement.className = 'alert alert-warning';
+        warningElement.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Location services require HTTPS.</strong> Current protocol: ${location.protocol}
+            <br>Contact your administrator to enable HTTPS for this site.
+        `;
+        document.querySelector('.container').prepend(warningElement);
+    }
+    
     initMap();
     
     // Add search functionality
@@ -297,70 +373,131 @@ function searchLocation() {
 }
 
 function getUserLocation() {
-    // Show loading status
+    // Show loading status and help info
     const statusElement = document.getElementById('location-status');
+    const helpElement = document.getElementById('location-help');
     statusElement.classList.remove('d-none');
+    helpElement.classList.add('d-none');
     
     // Check if geolocation is supported
     if (!navigator.geolocation) {
         showLocationError("Geolocation is not supported by your browser");
+        helpElement.classList.remove('d-none');
         return;
     }
     
-    // Get current position
-    navigator.geolocation.getCurrentPosition(
-        // Success callback
-        function(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            userPosition = [latitude, longitude];
-            
-            // Update the map
-            updateMapWithUserLocation(userPosition);
-            
-            // Find nearby blood banks
-            findNearbyBloodBanks(userPosition);
-            
-            // Hide loading status
-            statusElement.classList.add('d-none');
-        },
-        // Error callback
-        function(error) {
-            let errorMessage = "Unable to retrieve your location";
-            
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage = "Location access was denied. Please check your browser settings.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage = "Location information is unavailable at this time.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessage = "The request to get your location timed out.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    errorMessage = "An unknown error occurred.";
-                    break;
+    // Add a timeout to handle cases where the browser doesn't respond
+    const timeoutId = setTimeout(() => {
+        showLocationError("Location request is taking too long. Please try again.");
+        helpElement.classList.remove('d-none');
+    }, 15000);
+    
+    // Get current position with improved error handling
+    try {
+        navigator.geolocation.getCurrentPosition(
+            // Success callback
+            function(position) {
+                clearTimeout(timeoutId);
+                
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                userPosition = [latitude, longitude];
+                
+                console.log("Location obtained successfully:", userPosition);
+                
+                // Update the map
+                updateMapWithUserLocation(userPosition);
+                
+                // Find nearby blood banks
+                findNearbyBloodBanks(userPosition);
+                
+                // Hide loading status
+                statusElement.classList.add('d-none');
+                helpElement.classList.add('d-none');
+                
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success mt-2';
+                successMsg.innerHTML = `<i class="fas fa-check-circle me-2"></i>Location found successfully!`;
+                document.querySelector('.card-body').appendChild(successMsg);
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 3000);
+            },
+            // Error callback
+            function(error) {
+                clearTimeout(timeoutId);
+                console.error("Geolocation error:", error);
+                
+                let errorMessage = "Unable to retrieve your location";
+                let helpMessage = "";
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "Location access was denied by your browser.";
+                        helpMessage = `
+                            <div class="mt-2">
+                                <strong>How to enable location:</strong>
+                                <ul class="text-start small mt-1">
+                                    <li>Click the lock/info icon in your browser's address bar</li>
+                                    <li>Find "Location" or "Site settings"</li>
+                                    <li>Change permission to "Allow"</li>
+                                    <li>Refresh this page and try again</li>
+                                </ul>
+                            </div>
+                        `;
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Location information is unavailable. Your device may not have GPS or it's disabled.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "The request to get your location timed out. Please try again.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMessage = "An unknown error occurred while trying to get your location.";
+                        break;
+                }
+                
+                showLocationError(errorMessage, helpMessage);
+                helpElement.classList.remove('d-none');
+            },
+            // Options with increased timeout
+            {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
             }
-            
-            showLocationError(errorMessage);
-        },
-        // Options
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
+        );
+    } catch (e) {
+        clearTimeout(timeoutId);
+        console.error("Exception in geolocation:", e);
+        showLocationError("An error occurred while trying to access location services: " + e.message);
+        helpElement.classList.remove('d-none');
+    }
 }
 
-function showLocationError(message) {
+function showLocationError(message, helpMessage = "") {
     const statusElement = document.getElementById('location-status');
-    statusElement.innerHTML = `<i class="fas fa-exclamation-triangle text-warning me-1"></i> ${message}`;
+    const fallbackElement = document.getElementById('location-fallback');
+    
+    statusElement.innerHTML = `
+        <div>
+            <i class="fas fa-exclamation-triangle text-warning me-1"></i> 
+            ${message}
+            ${helpMessage}
+        </div>
+    `;
     statusElement.classList.remove('d-none');
-    setTimeout(() => {
-        statusElement.classList.add('d-none');
-    }, 5000);
+    fallbackElement.classList.remove('d-none');
+    
+    // Only auto-hide error message if there's no help message
+    if (!helpMessage) {
+        setTimeout(() => {
+            statusElement.classList.add('d-none');
+        }, 5000);
+    }
 }
 
 function updateMapWithUserLocation(position) {
@@ -562,6 +699,23 @@ function updateSearchResults(results, searchTerm) {
         </div>`;
     }
 }
+
+// Add event listeners for location presets
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.location-preset').forEach(button => {
+        button.addEventListener('click', function() {
+            const lat = parseFloat(this.getAttribute('data-lat'));
+            const lng = parseFloat(this.getAttribute('data-lng'));
+            userPosition = [lat, lng];
+            
+            // Update map with this location
+            updateMapWithUserLocation(userPosition);
+            
+            // Find nearby blood banks
+            findNearbyBloodBanks(userPosition);
+        });
+    });
+});
 </script>
 
 <style>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="text-center text-danger mb-4">Edit Profile</h2>
+                    
+                    <form method="POST" action="{{ url_for('edit_profile') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ current_user.first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ current_user.last_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone or '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="2">{{ current_user.address or '' }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="" {% if not current_user.gender %}selected{% endif %}>Prefer not to say</option>
+                                    <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Male</option>
+                                    <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Female</option>
+                                    <option value="other" {% if current_user.gender == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="blood_type" class="form-label">Blood Type</label>
+                                <select class="form-select" id="blood_type" name="blood_type">
+                                    <option value="" {% if not current_user.blood_type %}selected{% endif %}>Unknown</option>
+                                    <option value="A+" {% if current_user.blood_type == 'A+' %}selected{% endif %}>A+</option>
+                                    <option value="A-" {% if current_user.blood_type == 'A-' %}selected{% endif %}>A-</option>
+                                    <option value="B+" {% if current_user.blood_type == 'B+' %}selected{% endif %}>B+</option>
+                                    <option value="B-" {% if current_user.blood_type == 'B-' %}selected{% endif %}>B-</option>
+                                    <option value="AB+" {% if current_user.blood_type == 'AB+' %}selected{% endif %}>AB+</option>
+                                    <option value="AB-" {% if current_user.blood_type == 'AB-' %}selected{% endif %}>AB-</option>
+                                    <option value="O+" {% if current_user.blood_type == 'O+' %}selected{% endif %}>O+</option>
+                                    <option value="O-" {% if current_user.blood_type == 'O-' %}selected{% endif %}>O-</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">Save Changes</button>
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

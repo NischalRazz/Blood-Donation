@@ -207,8 +207,8 @@
                 <p>Welcome to BloodBridge AI Assistant! I'm here to help you with blood donation information.</p>
                 <div class="quick-suggestions">
                     <button class="quick-suggestion">Donation Process</button>
-                    <button class="quick-suggestion">Eligibility</button>
-                    <button class="quick-suggestion">Benefits</button>
+                    <button class="quick-suggestion">donor register</button>
+                    <button class="quick-suggestion">donation programs</button>
                 </div>
             </div>
         </div>
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     tag: 'donor_register',
     patterns: [
-      'I want to register as a donor', 'how do I become a donor', 'register me as a blood donor',
+      'donor register', 'I want to register as a donor', 'how do I become a donor', 'register me as a blood donor',
       'sign up to donate blood', 'donor registration', 'how to sign up as donor', 'become a donor',
       'donate blood registration', 'I want to donate blood', 'help me register as a donor',
       'start donating blood', 'I want to be a donor', 'how do I register to give blood', 'how to join as a donor'
@@ -331,25 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
       'Please go to the receiver registration page to begin your request.'
     ]
   },
-  {
-    tag: 'chat_help',
-    patterns: [
-      'how does the chat system work', 'can I talk to a donor', 'how can I chat with someone',
-      'chat with donor', 'chat with receiver', 'talk to someone', 'connect with donor',
-      'connect with receiver', 'chatting system', 'how to message donor', 'message receiver',
-      'can I send message', 'where is the chat', 'how to contact donor', 'how do I talk to someone'
-    ],
-    responses: [
-      'Our chat system allows receivers and donors to communicate after matching.',
-      'Once matched, you’ll see a chat option in your dashboard.',
-      'To start a chat, go to your messages section after logging in.',
-      'You can connect with others using our built-in chat feature after registration.'
-    ]
-  },
+  
   {
     tag: 'donation_programs',
     patterns: [
-      'tell me about donation programs', 'what programs are there', 'blood donation events',
+      'donation programs', 'tell me about donation programs', 'what programs are there', 'blood donation events',
       'any campaigns going on', 'upcoming blood drives', 'current donation programs',
       'what are your donation events', 'is there a donation drive', 'blood camp info',
       'donation campaign details', 'available programs', 'program information',
@@ -363,44 +349,45 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   },
   {
-    tag: 'donation_process',
-    patterns: [
-      'how to donate', 'how do i donate', 'donation process', 'steps to donate',
-      'how do i donate blood', 'how can i give blood', 'how can i donate blood',
-      'process of donating blood', 'how blood donation works', 'donating blood steps',
-      'what happens when you donate blood', 'blood donation process explained',
-      'can you explain how to donate', 'guide to donating blood', 'step by step donation',
-      'how does donating blood work', 'walk me through donation process',
-      'i want to donate blood what should i do', 'what are the steps to donate blood',
-      'what is the process of giving blood', 'procedure to donate blood', 'how blood donation is done',
-      'explain the blood donation process', 'instructions to donate blood',
-      'complete blood donation procedure', 'donation steps in detail',
-      'i want to give blood what are the steps', 'donation method', 'donating instructions',
-      'blood donation full process', 'how to begin blood donation',
-      'how does the donation procedure work', 'can you tell me the donation process',
-      'i want to understand the donation process', 'how do people donate blood',
-      'what to do before donating', 'can you guide me through donating',
-      'walk me through how to donate blood', 'how do you give blood', 'what should i do to donate blood',
-      'how do i go about donating blood', 'where to start with blood donation',
-      'can i donate blood and how', 'how can someone donate blood', 'how can i register to donate blood',
-      'is there a process for donating blood', 'steps involved in giving blood',
-      'please explain donation process', 'what is involved in donating blood',
-      'can you walk me through blood donation', 'explain how donating blood works',
-      'how do i start donating blood', 'what is the procedure to donate blood',
-      'what do i do to donate blood', 'can you help me with blood donation process',
-      'guide me on donating blood'
-    ],
-    responses: [
-      'To donate blood, you need to register, complete a health check, donate the blood, and then rest for a while.',
-      'The process involves registration, screening, donation, and recovery. It usually takes about 30-45 minutes.',
-      'First, you register and provide your health info, then the staff collects blood safely, and you get some rest afterward.',
-      'Donation is simple: sign up, answer some health questions, give blood, and relax for a few minutes.'
-    ]
-  },
+  tag: 'donation_process',
+  patterns: [
+    'how to donate', 'how do i donate', 'Donation Process', 'steps to donate',
+    'how do i donate blood', 'how can i give blood', 'how can i donate blood',
+    'process of donating blood', 'how blood donation works', 'donating blood steps',
+    'what happens when you donate blood', 'blood donation process explained',
+    'can you explain how to donate', 'guide to donating blood', 'step by step donation',
+    'how does donating blood work', 'walk me through donation process',
+    'i want to donate blood what should i do', 'what are the steps to donate blood',
+    'what is the process of giving blood', 'procedure to donate blood', 'how blood donation is done',
+    'explain the blood donation process', 'instructions to donate blood',
+    'complete blood donation procedure', 'donation steps in detail',
+    'i want to give blood what are the steps', 'donation method', 'donating instructions',
+    'blood donation full process', 'how to begin blood donation',
+    'how does the donation procedure work', 'can you tell me the donation process',
+    'i want to understand the donation process', 'how do people donate blood',
+    'what to do before donating', 'can you guide me through donating',
+    'walk me through how to donate blood', 'how do you give blood', 'what should i do to donate blood',
+    'how do i go about donating blood', 'where to start with blood donation',
+    'can i donate blood and how', 'how can someone donate blood', 'how can i register to donate blood',
+    'is there a process for donating blood', 'steps involved in giving blood',
+    'please explain donation process', 'what is involved in donating blood',
+    'can you walk me through blood donation', 'explain how donating blood works',
+    'how do i start donating blood', 'what is the procedure to donate blood',
+    'what do i do to donate blood', 'can you help me with blood donation process',
+    'guide me on donating blood'
+  ],
+  responses: [
+    'To donate blood, you must first create an account and submit your verification documents. Once the admin verifies your account, you can proceed to donate.',
+    'The donation process starts with registration and document verification. After your account is approved by the admin, you can schedule and donate blood.',
+    'Before donating, you need to submit important documents for verification. Once verified by the admin, you’ll go through screening, donation, and recovery.',
+    'First step is verification: register and upload your ID and medical documents. Once approved by the admin, you can safely donate blood at a scheduled time.'
+  ]
+},
+
   {
     tag: 'eligibility',
     patterns: [
-      'am i eligible to donate', 'who can donate blood', 'donation eligibility',
+      'eligibility', 'am i eligible to donate', 'who can donate blood', 'donation eligibility',
       'can i donate blood', 'requirements to donate', 'criteria for blood donation',
       'eligibility to give blood', 'can anyone donate', 'rules for donation',
       'blood donation requirements', 'what are the eligibility criteria',
@@ -579,7 +566,107 @@ document.addEventListener('DOMContentLoaded', () => {
     'Use the "Donation Centers" tab on the main screen to find locations and register for blood donation.',
     'Start by clicking on "Donation Centers" in the app menu to find where you can donate blood near you.'
   ]
+},
+
+{
+      "tag": "donation_start",
+      "patterns": [
+        "What should I do first?",
+        "How will I be able to donate blood from this system?",
+        "How do I start donating?",
+        "What's the first step to donate?",
+        "How can I donate blood?"
+      ],
+      "responses": [
+        "Firstly, authenticate your ID and verify that you are a donor. Then proceed to donate blood."
+      ]
+    },
+
+    {
+  "tag": "eligibility_criteria",
+  "patterns": [
+    "am i eligible to donate blood", "who can donate blood", "can i donate blood",
+    "blood donation requirements", "eligibility for blood donation",
+    "what are the conditions to donate blood", "criteria to donate blood",
+    "who is allowed to donate blood", "what makes you eligible to donate",
+    "blood donation age limit", "health requirements for donating blood"
+  ],
+  "responses": [
+    "To donate blood, you generally must be between 18 and 65 years old, weigh at least 50 kg, and be in good health.",
+    "You must not be suffering from any infectious diseases, and recent surgeries or tattoos may disqualify you temporarily.",
+    "Donors must meet age, weight, and health conditions. If unsure, consult with our team before registering.",
+    "If you're healthy, over 18, and meet the medical criteria, you're likely eligible to donate blood."
+  ]
+},
+
+{
+  "tag": "document_requirements",
+  "patterns": [
+    "what documents are needed", "what should I upload", "required documents for donation",
+    "which documents do I need to donate", "documents to verify account", "ID for blood donation",
+    "upload verification documents", "what proof is needed", "what kind of documents are required",
+    "how to verify account", "what documents are needed to get verified"
+  ],
+  "responses": [
+    "You need to upload a valid government-issued ID (like Aadhaar or Passport) and a recent medical certificate or blood report.",
+    "Required documents include a photo ID and any supporting medical document verifying you're fit to donate.",
+    "Please upload a valid ID and any health-related documentation. The admin will review and approve your account for donation.",
+    "For verification, we require your identification and medical documents to ensure donor safety and eligibility."
+  ]
+},
+
+{
+  "tag": "account_verification_status",
+  "patterns": [
+    "is my account verified", "has my account been approved", "how do I know if I'm verified",
+    "how to check verification status", "was my verification accepted", "did the admin approve me",
+    "how do I check my donor verification", "status of my documents", "am i approved to donate"
+  ],
+  "responses": [
+    "You can check your account status by logging in and visiting your dashboard. If verified, it will show 'Approved'.",
+    "If your documents are approved by the admin, your status will update to 'Verified'. You'll also receive a confirmation.",
+    "Log in and go to your profile to see your current verification status. If pending or rejected, follow the instructions shown.",
+    "You will be notified by email or dashboard alert once the admin reviews and updates your verification."
+  ]
+},
+
+{
+  "tag": "reasons_for_rejection",
+  "patterns": [
+    "why was my account rejected", "my verification failed", "why can't I donate",
+    "reason for rejection", "admin rejected my application", "my documents were not approved",
+    "what to do if account is rejected", "i was rejected", "my donor status is rejected"
+  ],
+  "responses": [
+    "Your account may be rejected due to missing or unclear documents, health concerns, or age/weight issues.",
+    "Please ensure your documents are valid, readable, and recent. You can re-upload them for re-evaluation.",
+    "Rejection could occur if health criteria aren’t met or if documents are invalid. Contact support for clarification.",
+    "You can review the rejection message in your profile or reach out to the admin for specific feedback."
+  ]
+},
+
+{
+  "tag": "re_donate_time",
+  "patterns": [
+    "when can I donate again", "how often can I give blood", "how long to wait before next donation",
+    "how many times can I donate", "interval between blood donations", "how frequently can I donate",
+    "next donation date", "time gap between donations", "how soon can I donate again"
+  ],
+  "responses": [
+    "You should wait at least 56 days (8 weeks) between whole blood donations.",
+    "Male donors can usually donate every 3 months, and female donors every 4 months depending on health.",
+    "It’s important to allow your body time to recover, so the recommended wait time is 8 weeks.",
+    "You can check your last donation date in your profile to calculate when you're next eligible to donate."
+  ]
 }
+
+
+
+
+
+
+
+    
 
 ];
 

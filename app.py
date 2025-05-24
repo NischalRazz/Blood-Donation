@@ -597,6 +597,31 @@ def receiver_dashboard():
 def profile():
     return render_template('profile.html')
 
+@app.route('/edit-profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        try:
+            # Update user information
+            current_user.first_name = request.form['first_name']
+            current_user.last_name = request.form['last_name']
+            current_user.email = request.form['email']
+            current_user.phone = request.form['phone']
+            current_user.address = request.form['address']
+            current_user.gender = request.form['gender']
+            current_user.blood_type = request.form['blood_type']
+            
+            # Save changes to database
+            db.session.commit()
+            
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred: {str(e)}', 'danger')
+    
+    return render_template('edit_profile.html')
+
 @app.route('/logout')
 @login_required
 def logout():
