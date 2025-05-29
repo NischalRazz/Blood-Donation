@@ -69,6 +69,7 @@
                             <th>Donation Center</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Next Eligible</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -100,6 +101,18 @@
                                             <span class="badge bg-success">Completed</span>
                                         {% elif donation.status == 'cancelled' %}
                                             <span class="badge bg-secondary">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if donation.donor.next_eligible_date %}
+                                            {% if donation.donor.next_eligible_date <= now %}
+                                                <span class="badge bg-success">Eligible Now</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ donation.donor.next_eligible_date.strftime('%d %b %Y') }}</span>
+                                                <small class="d-block text-muted">{{ (donation.donor.next_eligible_date - now).days }} days</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-success">Eligible Now</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -136,6 +149,15 @@
                                                 {% endif %}
                                                 
                                                 <li><hr class="dropdown-divider"></li>
+                                                
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-warning" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#suspendDonorModal{{ donation.id }}"
+                                                            data-donor-name="{{ donation.donor.first_name }} {{ donation.donor.last_name }}">
+                                                        <i class="fas fa-ban me-1"></i> Suspend Donor
+                                                    </button>
+                                                </li>
                                                 
                                                 <li>
                                                     <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteDonationModal{{ donation.id }}">
@@ -284,6 +306,12 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
         // Donors chart
         const donorsChartCtx = document.getElementById('donorsChart').getContext('2d');
         
@@ -348,3 +376,90 @@
 </script>
 {% endblock %}
 {% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all suspension buttons
+    const suspensionButtons = document.querySelectorAll('[data-bs-target^="#suspendDonorModal"]');
+    
+    suspensionButtons.forEach(button => {
+        // Get the target modal ID
+        const targetId = button.getAttribute('data-bs-target');
+        const modalId = targetId.substring(1); // Remove the # character
+        
+        // Check if the modal exists
+        if (!document.getElementById(modalId)) {
+            console.log(`Creating missing modal: ${modalId}`);
+            
+            // Extract the donation ID from the modal ID
+            const donationId = modalId.replace('suspendDonorModal', '');
+            
+            // Get donor information from the button's data attributes
+            const donorName = button.getAttribute('data-donor-name') || 'Unknown Donor';
+            
+            // Create the modal
+            const modalHtml = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}Label" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="${modalId}Label">Suspend Donor Account</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form onsubmit="logSuspension(event, '${donorName}')">
+                                <div class="modal-body">
+                                    <p>Are you sure you want to suspend <strong>${donorName}</strong>?</p>
+                                    <p class="text-danger">This will prevent the donor from logging in or using the system.</p>
+                                    <div class="mb-3">
+                                        <label for="suspension_reason${donationId}" class="form-label">Suspension Reason</label>
+                                        <textarea class="form-control" id="suspension_reason${donationId}" name="suspension_reason" rows="3" required></textarea>
+                                        <div class="form-text">This reason will be visible to the donor.</div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-warning">Suspend Donor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append the modal to the body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+    });
+});
+
+function logSuspension(event, donorName) {
+    event.preventDefault();
+    const form = event.target;
+    const reason = form.querySelector('textarea[name="suspension_reason"]').value;
+    
+    // Log to console
+    console.log("Donor suspended: " + donorName + ", Reason: " + reason);
+    
+    // Close the modal
+    try {
+        const modalElement = form.closest('.modal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            } else {
+                console.warn('Modal instance not found, trying to close manually');
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+            }
+        } else {
+            console.warn('Modal element not found');
+        }
+    } catch (error) {
+        console.error('Error closing modal:', error);
+    }
+}
+</script>

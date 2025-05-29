@@ -260,3 +260,32 @@
     </div>
 </div>
 {% endblock %}
+
+{% for reg in registrations %}
+    <!-- Suspend Donor Modal -->
+    <div class="modal fade" id="suspendDonorModal{{ reg.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Suspend Donor Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('admin_toggle_user_status', user_id=reg.donor.id, action='suspend') }}" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to suspend <strong>{{ reg.donor.first_name }} {{ reg.donor.last_name }}</strong>?</p>
+                        <p class="text-danger">This will prevent the donor from logging in or using the system.</p>
+                        <div class="mb-3">
+                            <label for="suspension_reason{{ reg.id }}" class="form-label">Suspension Reason</label>
+                            <textarea class="form-control" id="suspension_reason{{ reg.id }}" name="suspension_reason" rows="3" required></textarea>
+                            <div class="form-text">This reason will be visible to the donor.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Suspend Donor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}

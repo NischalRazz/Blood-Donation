@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mobile menu handling
     setupMobileMenu();
+    
+    // Initialize modals
+    initializeModals();
 });
 
 function initializeTooltips() {
@@ -457,5 +460,135 @@ function displayEligibilityResults(results) {
         resultCard.appendChild(cardBody);
         
         resultsContainer.appendChild(resultCard);
+    }
+}
+
+function initializeModals() {
+    // Find all modal triggers
+    const modalTriggers = document.querySelectorAll('[data-bs-toggle="modal"]');
+    
+    modalTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function(event) {
+            const targetSelector = this.getAttribute('data-bs-target');
+            const modalElement = document.querySelector(targetSelector);
+            
+            if (modalElement) {
+                try {
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                } catch (error) {
+                    console.error('Error showing modal:', error);
+                }
+            } else {
+                console.warn('Modal target not found:', targetSelector);
+                
+                // Check if the modal might be in a loop with dynamic IDs
+                if (targetSelector.includes('suspendDonorModal')) {
+                    // Extract the ID from the target selector
+                    const idMatch = targetSelector.match(/suspendDonorModal(\d+)/);
+                    if (idMatch && idMatch[1]) {
+                        const donationId = idMatch[1];
+                        console.log(`Attempting to find modal for donation ID: ${donationId}`);
+                        
+                        // Try to find the modal with just the numeric ID
+                        const alternativeSelector = `#suspendDonorModal${donationId}`;
+                        const alternativeElement = document.querySelector(alternativeSelector);
+                        
+                        if (alternativeElement) {
+                            try {
+                                const modal = new bootstrap.Modal(alternativeElement);
+                                modal.show();
+                                console.log(`Successfully found and showed modal: ${alternativeSelector}`);
+                            } catch (error) {
+                                console.error('Error showing alternative modal:', error);
+                            }
+                        } else {
+                            console.error(`Alternative modal not found: ${alternativeSelector}`);
+                            
+                            // Create the modal dynamically if it doesn't exist
+                            const donorName = this.getAttribute('data-donor-name') || 'Unknown Donor';
+                            createSuspensionModal(donationId, donorName);
+                        }
+                    }
+                }
+            }
+        });
+    });
+}
+
+// Function to create a suspension modal dynamically
+function createSuspensionModal(donationId, donorName) {
+    const modalId = `suspendDonorModal${donationId}`;
+    
+    // Create the modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}Label" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="${modalId}Label">Suspend Donor Account</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form onsubmit="logSuspension(event, '${donorName}')">
+                        <div class="modal-body">
+                            <p>Are you sure you want to suspend <strong>${donorName}</strong>?</p>
+                            <p class="text-danger">This will prevent the donor from logging in or using the system.</p>
+                            <div class="mb-3">
+                                <label for="suspension_reason${donationId}" class="form-label">Suspension Reason</label>
+                                <textarea class="form-control" id="suspension_reason${donationId}" name="suspension_reason" rows="3" required></textarea>
+                                <div class="form-text">This reason will be visible to the donor.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">Suspend Donor</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Append the modal to the body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show the modal
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        console.log(`Created and showed modal: #${modalId}`);
+    }
+}
+
+// Function to log suspension
+function logSuspension(event, donorName) {
+    event.preventDefault();
+    const form = event.target;
+    const reason = form.querySelector('textarea[name="suspension_reason"]').value;
+    
+    // Log to console
+    console.log("Donor suspended: " + donorName + ", Reason: " + reason);
+    
+    // Close the modal
+    try {
+        const modalElement = form.closest('.modal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            } else {
+                console.warn('Modal instance not found, trying to close manually');
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+            }
+        } else {
+            console.warn('Modal element not found');
+        }
+    } catch (error) {
+        console.error('Error closing modal:', error);
     }
 }

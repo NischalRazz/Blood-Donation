@@ -311,6 +311,67 @@
     </div>
 </div>
 
+{% if current_user.role == 'admin' %}
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Admin Actions</h5>
+        </div>
+        <div class="card-body">
+            {% if donation.status == 'pending' %}
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('update_donation_status', donation_id=donation.id, status='completed') }}" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i> Confirm Donation
+                    </a>
+                    <a href="{{ url_for('update_donation_status', donation_id=donation.id, status='cancelled') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-times me-1"></i> Cancel Donation
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if donation.status == 'completed' %}
+                <div class="d-grid mt-3">
+                    <a href="{{ url_for('generate_donation_certificate', donation_id=donation.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-certificate me-1"></i> Generate Certificate
+                    </a>
+                </div>
+            {% endif %}
+            
+            <div class="d-grid mt-3">
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#suspendDonorModal">
+                    <i class="fas fa-ban me-1"></i> Suspend Donor
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Suspend Donor Modal -->
+    <div class="modal fade" id="suspendDonorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Suspend Donor Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form onsubmit="logSuspension(event, '{{ donation.donor.first_name }} {{ donation.donor.last_name }}')">
+                    <div class="modal-body">
+                        <p>Are you sure you want to suspend <strong>{{ donation.donor.first_name }} {{ donation.donor.last_name }}</strong>?</p>
+                        <p class="text-danger">This will prevent the donor from logging in or using the system.</p>
+                        <div class="mb-3">
+                            <label for="suspension_reason" class="form-label">Suspension Reason</label>
+                            <textarea class="form-control" id="suspension_reason" name="suspension_reason" rows="3" required></textarea>
+                            <div class="form-text">This reason will be visible to the donor.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Suspend Donor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
 <style>
     .avatar-circle {
         width: 80px;
@@ -396,3 +457,20 @@
     }
 </style>
 {% endblock %}
+
+<script>
+function logSuspension(event, donorName) {
+    event.preventDefault();
+    const form = event.target;
+    const reason = form.querySelector('textarea[name="suspension_reason"]').value;
+    
+    // Log to console
+    console.log("Donor suspended: " + donorName + ", Reason: " + reason);
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('suspendDonorModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+</script>

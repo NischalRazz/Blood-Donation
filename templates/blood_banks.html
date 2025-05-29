@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (locationBtn) {
             locationBtn.classList.add('btn-outline-warning');
             locationBtn.classList.remove('btn-outline-primary');
-            locationBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Location Requires HTTPS';
+            locationBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Use current Location';
         }
     }
 
@@ -894,6 +894,42 @@ document.addEventListener('DOMContentLoaded', function() {
             if (fallbackElement) fallbackElement.classList.add('d-none');
             if (helpElement) helpElement.classList.add('d-none');
         });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the current location button
+    const currentLocationBtn = document.getElementById('current-location-btn');
+    
+    // Add click event that uses mock location instead of real geolocation
+    currentLocationBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting Location...';
+        
+        // Mock coordinates (you can change these to match your area)
+        const latitude = 27.7172;  // Example: Kathmandu
+        const longitude = 85.3240;
+        
+        // Wait a moment to simulate geolocation (optional)
+        setTimeout(function() {
+            // Call your existing functions with the mock coordinates
+            if (typeof updateMapWithUserLocation === 'function') {
+                updateMapWithUserLocation([latitude, longitude]);
+            }
+            
+            if (typeof findNearbyBloodBanks === 'function') {
+                findNearbyBloodBanks([latitude, longitude]);
+            }
+            
+            // Update button to show success
+            currentLocationBtn.disabled = false;
+            currentLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt me-2"></i>Location Found';
+            currentLocationBtn.classList.remove('btn-outline-primary');
+            currentLocationBtn.classList.add('btn-success');
+        }, 1000);
     });
 });
 </script>

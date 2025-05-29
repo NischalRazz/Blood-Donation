@@ -1918,12 +1918,12 @@ notification_handlers.update({
     'donation_result': notify_donation_result
 })
 
-@app.route('/admin/toggle-user-status/<int:user_id>/<action>')
+@app.route('/admin/toggle-user-status/<int:user_id>/<action>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_toggle_user_status(user_id, action):
     """Toggle a user's active status"""
-    if action not in ['activate', 'deactivate']:
+    if action not in ['activate', 'deactivate', 'suspend']:
         flash('Invalid action', 'danger')
         return redirect(url_for('admin_users'))
 
@@ -1935,22 +1935,29 @@ def admin_toggle_user_status(user_id, action):
             flash('You cannot deactivate your own account', 'danger')
             return redirect(url_for('admin_view_user', user_id=user.id))
 
-        # Toggle status
-        user.is_active = (action == 'activate')
+        # For suspension, we'll just log to console for now
+        if action == 'suspend':
+            reason = request.form.get('suspension_reason', 'No reason provided')
+            print(f"[ADMIN ACTION] User {user.id} ({user.email}) would be suspended. Reason: {reason}")
+            print(f"[ADMIN ACTION] Suspended by admin {current_user.id} ({current_user.email})")
+            flash(f'User would be suspended (check console for details)', 'warning')
+        else:
+            # Toggle status for activate/deactivate
+            user.is_active = (action == 'activate')
+            
+            # Log the admin action
+            log_admin_action(
+                admin_user=current_user,
+                action_type=f'user_{action}',
+                target_user=user,
+                details={
+                    'previous_status': not user.is_active,
+                    'new_status': user.is_active
+                }
+            )
 
-        # Log the admin action
-        log_admin_action(
-            admin_user=current_user,
-            action_type=f'user_{action}',
-            target_user=user,
-            details={
-                'previous_status': not user.is_active,
-                'new_status': user.is_active
-            }
-        )
-
-        db.session.commit()
-        flash(f'User has been {"activated" if user.is_active else "deactivated"}', 'success')
+            db.session.commit()
+            flash(f'User has been {"activated" if user.is_active else "deactivated"}', 'success')
 
     except Exception as e:
         db.session.rollback()
