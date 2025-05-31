@@ -26,10 +26,12 @@ A comprehensive web application for managing blood donations, connecting donors 
 - **Admin Features**
   - Verification management
   - Blood inventory control
-  - User management
+  - User management with suspension controls
+  - User suspension system (1 hour to 1 year)
+  - Auto-expiring suspensions
   - Impact statistics
   - Testimonials management
-  - Activity logs
+  - Activity logs and audit trails
 
 - **Communication**
   - Notifications
@@ -46,6 +48,19 @@ A comprehensive web application for managing blood donations, connecting donors 
 
 ## Setup Instructions
 
+## Quick Start
+
+### Option 1: Automated Setup (Recommended)
+```bash
+# Windows
+.\start_windows.bat
+
+# Linux/macOS
+chmod +x start_unix.sh
+./start_unix.sh
+```
+
+### Option 2: Manual Setup
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
@@ -64,20 +79,30 @@ A comprehensive web application for managing blood donations, connecting donors 
    ```
 
 4. **Configure environment variables**
-   Create a `.env` file with the following variables:
-   ```
-   SESSION_SECRET=your_secret_key
-   DATABASE_URL=postgresql://postgres:your_password@localhost:5432/bloodbridge
+   Copy `.env.example` to `.env` and update the values:
+   ```bash
+   cp .env.example .env
    ```
 
 5. **Initialize the database**
    ```bash
-   flask db upgrade
+   python migrate.py
+   python seed_data.py
    ```
 
-6. **Run the application**
+6. **Create admin account**
    ```bash
-   flask run
+   python create_admin.py
+   ```
+
+7. **Run the application**
+   ```bash
+   python app.py
+   ```
+
+8. **Verify deployment (optional)**
+   ```bash
+   python verify_deployment.py
    ```
 
 ## Project Structure

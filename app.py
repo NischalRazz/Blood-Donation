@@ -209,6 +209,19 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
+            # Check if user is suspended
+            if user.is_suspended():
+                suspension_info = user.get_suspension_status()
+                if suspension_info['suspended_until']:
+                    time_remaining = suspension_info['time_remaining']
+                    if time_remaining['days'] > 0:
+                        flash(f'Your account is suspended until {suspension_info["suspended_until"].strftime("%Y-%m-%d %H:%M")}. Reason: {suspension_info["reason"]}', 'danger')
+                    else:
+                        flash(f'Your account is suspended for {time_remaining["hours"]} hours and {time_remaining["minutes"]} minutes. Reason: {suspension_info["reason"]}', 'danger')
+                else:
+                    flash(f'Your account has been suspended indefinitely. Reason: {suspension_info["reason"]}', 'danger')
+                return render_template('login.html')
+            
             if user.totp_enabled:
                 # Store user ID in session for 2FA verification
                 session['pending_user_id'] = user.id
@@ -225,6 +238,20 @@ def verify_2fa():
 
     user = User.query.get(session['pending_user_id'])
     if not user:
+        return redirect(url_for('login'))
+
+    # Check if user is suspended before allowing 2FA
+    if user.is_suspended():
+        session.pop('pending_user_id', None)
+        suspension_info = user.get_suspension_status()
+        if suspension_info['suspended_until']:
+            time_remaining = suspension_info['time_remaining']
+            if time_remaining['days'] > 0:
+                flash(f'Your account is suspended until {suspension_info["suspended_until"].strftime("%Y-%m-%d %H:%M")}. Reason: {suspension_info["reason"]}', 'danger')
+            else:
+                flash(f'Your account is suspended for {time_remaining["hours"]} hours and {time_remaining["minutes"]} minutes. Reason: {suspension_info["reason"]}', 'danger')
+        else:
+            flash(f'Your account has been suspended indefinitely. Reason: {suspension_info["reason"]}', 'danger')
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -1923,41 +1950,114 @@ notification_handlers.update({
 @admin_required
 def admin_toggle_user_status(user_id, action):
     """Toggle a user's active status"""
-    if action not in ['activate', 'deactivate', 'suspend']:
+    if action not in ['activate', 'deactivate', 'suspend', 'unsuspend']:
         flash('Invalid action', 'danger')
         return redirect(url_for('admin_users'))
 
     user = User.query.get_or_404(user_id)
 
     try:
-        # Can't deactivate yourself
+        # Can't modify yourself
         if user.id == current_user.id:
-            flash('You cannot deactivate your own account', 'danger')
+            flash('You cannot modify your own account status', 'danger')
             return redirect(url_for('admin_view_user', user_id=user.id))
 
-        # For suspension, we'll just log to console for now
         if action == 'suspend':
-            reason = request.form.get('suspension_reason', 'No reason provided')
-            print(f"[ADMIN ACTION] User {user.id} ({user.email}) would be suspended. Reason: {reason}")
-            print(f"[ADMIN ACTION] Suspended by admin {current_user.id} ({current_user.email})")
-            flash(f'User would be suspended (check console for details)', 'warning')
-        else:
-            # Toggle status for activate/deactivate
-            user.is_active = (action == 'activate')
+            reason = request.form.get('reason', 'No reason provided')
+            duration = request.form.get('duration', 'indefinite')
+            
+            # Parse duration into hours
+            duration_hours = None
+            if duration != 'indefinite':
+                duration_map = {
+                    '1_hour': 1,
+                    '6_hours': 6,
+                    '12_hours': 12,
+                    '1_day': 24,
+                    '3_days': 72,
+                    '1_week': 168,
+                    '2_weeks': 336,
+                    '1_month': 720,
+                    '3_months': 2160,
+                    '6_months': 4320,
+                    '1_year': 8760
+                }
+                duration_hours = duration_map.get(duration)
+            
+            # Suspend the user
+            user.suspend(reason=reason, duration=duration_hours, suspended_by_user=current_user.id)
             
             # Log the admin action
             log_admin_action(
                 admin_user=current_user,
-                action_type=f'user_{action}',
+                action_type='user_suspend',
                 target_user=user,
                 details={
-                    'previous_status': not user.is_active,
-                    'new_status': user.is_active
+                    'reason': reason,
+                    'duration_hours': duration_hours,
+                    'suspended_until': user.suspended_until.isoformat() if user.suspended_until else None
                 }
             )
+            
+            if duration_hours:
+                flash(f'User has been suspended for {duration_hours} hours. Reason: {reason}', 'warning')
+            else:
+                flash(f'User has been suspended indefinitely. Reason: {reason}', 'warning')
+                
+        elif action == 'unsuspend':
+            if user.is_suspended():
+                user.unsuspend(unsuspended_by_user=current_user.id)
+                
+                # Log the admin action
+                log_admin_action(
+                    admin_user=current_user,
+                    action_type='user_unsuspend',
+                    target_user=user,
+                    details={'unsuspended_by': current_user.id}
+                )
+                flash('User has been unsuspended successfully', 'success')
+            else:
+                flash('User is not currently suspended', 'info')
+            
+        elif action == 'activate':
+            # Unsuspend if suspended, or just activate
+            if user.is_suspended():
+                user.unsuspend(unsuspended_by_user=current_user.id)
+                
+                # Log the admin action
+                log_admin_action(
+                    admin_user=current_user,
+                    action_type='user_unsuspend',
+                    target_user=user,
+                    details={'unsuspended_by': current_user.id}
+                )
+                flash('User has been unsuspended and activated', 'success')
+            else:
+                user.is_active = True
+                
+                # Log the admin action
+                log_admin_action(
+                    admin_user=current_user,
+                    action_type='user_activate',
+                    target_user=user,
+                    details={'previous_status': False, 'new_status': True}
+                )
+                flash('User has been activated', 'success')
+            
+        else:  # deactivate
+            user.is_active = False
+            
+            # Log the admin action
+            log_admin_action(
+                admin_user=current_user,
+                action_type='user_deactivate',
+                target_user=user,
+                details={'previous_status': True, 'new_status': False}
+            )
 
-            db.session.commit()
-            flash(f'User has been {"activated" if user.is_active else "deactivated"}', 'success')
+            flash('User has been deactivated', 'success')
+
+        db.session.commit()
 
     except Exception as e:
         db.session.rollback()

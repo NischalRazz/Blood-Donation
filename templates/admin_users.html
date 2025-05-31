@@ -87,26 +87,41 @@
                                             <span class="text-muted">Not specified</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
-                                    <td>
-                                        {% if user.role == 'donor' %}
+                                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>                                    <td>
+                                        {% set suspension_status = user.get_suspension_status() %}
+                                        {% if suspension_status.is_suspended %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-user-clock me-1"></i>Suspended
+                                            </span>
+                                        {% elif not user.is_active %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-user-times me-1"></i>Inactive
+                                            </span>
+                                        {% elif user.role == 'donor' %}
                                             {% if user.is_verified %}
-                                                <span class="badge bg-success">Verified</span>
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-user-check me-1"></i>Verified
+                                                </span>
                                             {% elif user.verification_status == 'pending' %}
-                                                <span class="badge bg-warning">Pending</span>
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-user-clock me-1"></i>Pending
+                                                </span>
                                             {% else %}
-                                                <span class="badge bg-secondary">Unverified</span>
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="fas fa-user me-1"></i>Unverified
+                                                </span>
                                             {% endif %}
                                         {% else %}
-                                            <span class="badge bg-secondary">N/A</span>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-user-check me-1"></i>Active
+                                            </span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ user.id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                                 Actions
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ user.id }}">
+                                            </button>                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ user.id }}">
                                                 <li>
                                                     <a class="dropdown-item" href="{{ url_for('admin_view_user', user_id=user.id) }}">
                                                         <i class="fas fa-eye me-2"></i> View Details
@@ -122,6 +137,21 @@
                                                         <i class="fas fa-key me-2"></i> Reset Password
                                                     </a>
                                                 </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                {% set suspension_status = user.get_suspension_status() %}
+                                                {% if suspension_status.is_suspended %}
+                                                    <li>
+                                                        <a class="dropdown-item text-info" href="{{ url_for('admin_toggle_user_status', user_id=user.id, action='unsuspend') }}">
+                                                            <i class="fas fa-user-check me-2"></i> Unsuspend User
+                                                        </a>
+                                                    </li>
+                                                {% else %}
+                                                    <li>
+                                                        <a class="dropdown-item text-warning" href="{{ url_for('admin_view_user', user_id=user.id) }}#suspendModal" data-bs-toggle="tooltip" title="Go to user details to suspend">
+                                                            <i class="fas fa-user-clock me-2"></i> Suspend User
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user.id }}">

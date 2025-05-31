@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     medical_conditions = db.Column(db.Text)
     is_available = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     # 2FA fields
     totp_secret = db.Column(db.String(32))
     totp_enabled = db.Column(db.Boolean, default=False)
@@ -32,6 +33,16 @@ class User(UserMixin, db.Model):
     last_donation_date = db.Column(db.DateTime)
     next_eligible_date = db.Column(db.DateTime)
     verification_note = db.Column(db.Text)
+    
+    # Suspension fields
+    is_active = db.Column(db.Boolean, default=True)
+    suspension_reason = db.Column(db.Text)
+    suspended_at = db.Column(db.DateTime)
+    suspended_until = db.Column(db.DateTime)
+    suspended_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    # Relationships
+    suspended_by_user = db.relationship('User', remote_side=[id], backref='suspended_users')
 
     def get_totp_uri(self):
         """Generate the TOTP URI for QR code generation"""
@@ -88,6 +99,105 @@ class User(UserMixin, db.Model):
             return reset
         return None
 
+    def is_suspended(self):
+        """Check if user is currently suspended"""
+        if not self.is_active:
+            # Check if it's a timed suspension that has expired
+            if self.suspended_until and datetime.utcnow() >= self.suspended_until:
+                # Auto-unsuspend if suspension period has ended
+                self.unsuspend()
+                return False
+            return True
+        return False
+
+    def suspend(self, reason, duration=None, suspended_by_user=None):
+        """Suspend the user for a specified duration or indefinitely
+        
+        Args:
+            reason: Reason for suspension
+            duration: Can be either:
+                     - Number of hours (int/float)
+                     - datetime object for until when suspended
+                     - None for indefinite suspension
+            suspended_by_user: User ID of admin performing suspension
+        """
+        self.is_active = False
+        self.suspension_reason = reason
+        self.suspended_at = datetime.utcnow()
+        
+        if duration is not None:
+            if isinstance(duration, (int, float)):
+                # Duration in hours
+                self.suspended_until = self.suspended_at + timedelta(hours=duration)
+            elif isinstance(duration, datetime):
+                # Specific datetime
+                self.suspended_until = duration
+            else:
+                # Invalid duration type, treat as indefinite
+                self.suspended_until = None
+        else:
+            self.suspended_until = None  # Indefinite suspension
+            
+        if suspended_by_user:
+            self.suspended_by = suspended_by_user
+        
+        return True
+
+    def unsuspend(self, unsuspended_by_user=None):
+        """Remove suspension from the user
+        
+        Args:
+            unsuspended_by_user: User ID of admin removing suspension
+        """
+        if not self.is_suspended():
+            return False
+        
+        self.is_active = True
+        self.suspension_reason = None
+        self.suspended_at = None
+        self.suspended_until = None
+        self.suspended_by = None
+        
+        return True
+
+    def get_suspension_status(self):
+        """Get detailed suspension status information"""
+        if not self.is_suspended():
+            return {
+                'is_suspended': False,
+                'reason': None,
+                'suspended_at': None,
+                'suspended_until': None,
+                'suspended_by': None,
+                'time_remaining': None
+            }
+        
+        time_remaining = None
+        if self.suspended_until:
+            remaining = self.suspended_until - datetime.utcnow()
+            if remaining.total_seconds() > 0:
+                days = remaining.days
+                hours, remainder = divmod(remaining.seconds, 3600)
+                minutes = remainder // 60
+                time_remaining = {
+                    'days': days,
+                    'hours': hours,
+                    'minutes': minutes,
+                    'total_hours': remaining.total_seconds() / 3600
+                }
+        
+        suspended_by_user = None
+        if self.suspended_by:
+            suspended_by_user = User.query.get(self.suspended_by)
+        
+        return {
+            'is_suspended': True,
+            'reason': self.suspension_reason,
+            'suspended_at': self.suspended_at,
+            'suspended_until': self.suspended_until,
+            'suspended_by': suspended_by_user,
+            'time_remaining': time_remaining
+        }
 class BloodRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
